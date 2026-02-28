@@ -1,5 +1,15 @@
 (function () {
   'use strict';
+// Break out of iframe if loaded inside one (e.g. Wix embed)
+if (window.self !== window.top) {
+  try {
+    var s = window.top.document.createElement('script');
+    s.src = document.currentScript.src;
+    window.top.document.head.appendChild(s);
+  } catch(e) {}
+  return; // Stop running inside the iframe
+}
+  
   if (document.getElementById('acc-widget-root')) return;
 
   /* ═══════════════════════════════════════════════════════
@@ -1028,3 +1038,4 @@
   });
 
 })();
+
