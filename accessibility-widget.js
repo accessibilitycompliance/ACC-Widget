@@ -1,15 +1,5 @@
 (function () {
   'use strict';
-// Break out of iframe if loaded inside one (e.g. Wix embed)
-if (window.self !== window.top) {
-  try {
-    var s = window.top.document.createElement('script');
-    s.src = document.currentScript.src;
-    window.top.document.head.appendChild(s);
-  } catch(e) {}
-  return; // Stop running inside the iframe
-}
-  
   if (document.getElementById('acc-widget-root')) return;
 
   /* ═══════════════════════════════════════════════════════
@@ -87,6 +77,12 @@ if (window.self !== window.top) {
     }
     #acc-panel.acc-open { transform: scale(1) translateY(0); opacity: 1; pointer-events: all; }
     #acc-panel * { box-sizing: border-box; margin: 0; padding: 0; }
+
+    /* ── Wix iframe mode: absolute so panel isn't clipped by iframe box ── */
+    body.acc-in-iframe { height: 80px; overflow: hidden; }
+    body.acc-in-iframe #acc-toggle { position: absolute; bottom: 10px; right: 10px; }
+    body.acc-in-iframe #acc-panel  { position: absolute; bottom: 80px; right: 10px; max-height: 75vh; }
+    body.acc-in-iframe.acc-expanded { height: 100vh; overflow: hidden; }
 
     /* Header */
     .acc-header {
@@ -585,16 +581,53 @@ if (window.self !== window.top) {
   const guide     = document.getElementById('acc-reading-line');
   const widgetEl  = document.getElementById('acc-widget-root');
 
+  // ── Wix iframe detection & resize ─────────
+  // position:fixed inside a Wix iframe is clipped to the iframe box.
+  // Strategy: mark body with acc-in-iframe, use position:absolute,
+  // and postMessage Wix to resize the iframe on open/close.
+  const isInIframe = window.self !== window.top;
+  if (isInIframe) document.body.classList.add('acc-in-iframe');
+
+  function postHeight(h) {
+    // Try all known Wix/generic iframe resize message formats
+    window.parent.postMessage({ type: 'iframe-height', height: h }, '*');
+    window.parent.postMessage({ intent: 'iframe-height', height: h }, '*');
+    window.parent.postMessage(JSON.stringify({ eventType: 'height', data: h }), '*');
+    window.parent.postMessage(JSON.stringify({ height: h }), '*');
+  }
+
+  function wixExpand() {
+    if (!isInIframe) return;
+    const h = window.screen.height;
+    document.documentElement.style.height = h + 'px';
+    document.body.style.height = h + 'px';
+    document.body.classList.add('acc-expanded');
+    postHeight(h);
+  }
+
+  function wixCollapse() {
+    if (!isInIframe) return;
+    document.documentElement.style.height = '80px';
+    document.body.style.height = '80px';
+    document.body.classList.remove('acc-expanded');
+    postHeight(80);
+  }
+
   const openPanel = () => {
     S.open = true;
     panel.classList.add('acc-open');
     toggleBtn.setAttribute('aria-expanded', true);
+    wixExpand();
   };
   const closePanel = () => {
     S.open = false;
     panel.classList.remove('acc-open');
     toggleBtn.setAttribute('aria-expanded', false);
+    wixCollapse();
   };
+
+  // Initialise collapsed state
+  wixCollapse();
 
   toggleBtn.addEventListener('click', () => S.open ? closePanel() : openPanel());
   document.getElementById('acc-close').addEventListener('click', closePanel);
@@ -1038,4 +1071,3 @@ if (window.self !== window.top) {
   });
 
 })();
-
