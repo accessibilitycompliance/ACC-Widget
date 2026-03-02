@@ -6,7 +6,7 @@
      ACC ACCESSIBILITY WIDGET  |  acclogo embedded
   ═══════════════════════════════════════════════════════ */
 
-  const ACC_LOGO = "data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'%3E%3Crect width='64' height='64' rx='14' fill='%230f1117'/%3E%3Crect width='62' height='62' x='1' y='1' rx='13' fill='none' stroke='%232a2d3e' stroke-width='1.5'/%3E%3Ccircle cx='32' cy='14' r='5.5' fill='%234f8ef7'/%3E%3Cpath d='M32 21 L32 39' stroke='%234f8ef7' stroke-width='4' stroke-linecap='round'/%3E%3Cpath d='M13 27 L32 23 L51 27' stroke='%2338d9a9' stroke-width='4' stroke-linecap='round' stroke-linejoin='round' fill='none'/%3E%3Cpath d='M32 39 L22 53' stroke='%2338d9a9' stroke-width='4' stroke-linecap='round'/%3E%3Cpath d='M32 39 L42 53' stroke='%2338d9a9' stroke-width='4' stroke-linecap='round'/%3E%3C/svg%3E";
+  const ACC_LOGO = 'data:image/svg+xml;charset=utf-8,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64"><rect width="64" height="64" rx="14" fill="%230f1117"/><rect width="62" height="62" x="1" y="1" rx="13" fill="none" stroke="%232a2d3e" stroke-width="1.5"/><circle cx="32" cy="14" r="5.5" fill="%234f8ef7"/><path d="M32 21 L32 39" stroke="%234f8ef7" stroke-width="4" stroke-linecap="round"/><path d="M13 27 L32 23 L51 27" stroke="%2338d9a9" stroke-width="4" stroke-linecap="round" stroke-linejoin="round" fill="none"/><path d="M32 39 L22 53" stroke="%2338d9a9" stroke-width="4" stroke-linecap="round"/><path d="M32 39 L42 53" stroke="%2338d9a9" stroke-width="4" stroke-linecap="round"/></svg>';
 
   // ── Audit history stored in memory
   const auditHistory = [];
@@ -340,38 +340,15 @@
        MOBILE RESPONSIVE
     ══════════════════════════════════════════ */
 
-    /* Small phones: full-width bottom sheet */
+    /* Mobile responsive - sizing only, no position overrides */
     @media (max-width: 480px) {
       #acc-toggle {
-        bottom: 16px;
-        right: 16px;
         width: 54px;
         height: 54px;
         border-radius: 14px;
       }
       #acc-toggle img { width: 30px; height: 30px; }
       #acc-toggle-label { display: none; }
-
-      #acc-panel {
-        /* Anchor to the bottom edge, span full width */
-        bottom: 0 !important;
-        right: 0 !important;
-        left: 0 !important;
-        top: auto !important;
-        width: 100% !important;
-        max-width: 100% !important;
-        max-height: 88vh !important;
-        border-radius: 20px 20px 0 0 !important;
-        /* Slide up from below instead of scale animation */
-        transform: translateY(110%) !important;
-        opacity: 1 !important;
-        transition: transform .35s cubic-bezier(.34,1.1,.64,1) !important;
-      }
-      #acc-panel.acc-open {
-        transform: translateY(0) !important;
-        opacity: 1 !important;
-      }
-
       .acc-header { padding: 14px 14px 0; }
       .acc-header-title h2 { font-size: .82rem; }
       .acc-body, .acc-fix-body, .acc-hist-body { padding: 10px; gap: 6px; }
@@ -383,15 +360,6 @@
       .acc-swatches { gap: 5px; }
       .acc-swatch { width: 28px; height: 28px; border-radius: 7px; }
       .acc-stats { gap: 14px; }
-    }
-
-    /* Medium-small screens: constrained but still floating */
-    @media (min-width: 481px) and (max-width: 640px) {
-      #acc-panel {
-        width: calc(100vw - 32px) !important;
-        right: 16px !important;
-        left: auto !important;
-      }
     }
   `;
   document.head.appendChild(style);
