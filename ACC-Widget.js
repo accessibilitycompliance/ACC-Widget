@@ -2,6 +2,16 @@
   'use strict';
   if (document.getElementById('acc-widget-root')) return;
 
+  // ── Read client identity from script tag attributes ──
+  const _script = document.currentScript ||
+    document.querySelector('script[data-client]') ||
+    document.querySelector('script[src*="ACC-Widget"]');
+  const ACC_CLIENT  = _script ? (_script.getAttribute('data-client')  || '') : '';
+  const ACC_TIER    = _script ? (_script.getAttribute('data-tier')    || '1') : '1';
+  const ACC_DOMAIN  = _script ? (_script.getAttribute('data-domain')  || window.location.hostname) : window.location.hostname;
+  const ACC_API_URL = 'https://wfyzvmfvlukawidowuym.supabase.co';
+  const ACC_ANON    = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6IndmeXp2bWZ2bHVrYXdpZG93dXltIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzMyODE3MDksImV4cCI6MjA4ODg1NzcwOX0.UeVjqQtu-eBryHWAnH8wZoX0QPJ1ZNcdRCcAaUbWT1M';
+
   /* ═══════════════════════════════════════════════════════
      ACC ACCESSIBILITY WIDGET v2  |  acclogo embedded
   ═══════════════════════════════════════════════════════ */
@@ -338,6 +348,9 @@
         <div class="acc-tabs" role="tablist" aria-label="Accessibility settings sections">
           <button class="acc-tab acc-active" data-tab="profiles" role="tab" aria-selected="true"  aria-controls="panel-profiles" id="tab-profiles">👤 Profiles</button>
           <button class="acc-tab"            data-tab="settings" role="tab" aria-selected="false" aria-controls="panel-settings" id="tab-settings">⚙ Settings</button>
+          <button class="acc-tab"            data-tab="autofix"  role="tab" aria-selected="false" aria-controls="panel-autofix"  id="tab-autofix">🔍 Scan</button>
+          <button class="acc-tab"            data-tab="history"  role="tab" aria-selected="false" aria-controls="panel-history"  id="tab-history">🕑 History</button>
+          <button class="acc-tab"            data-tab="feedback" role="tab" aria-selected="false" aria-controls="panel-feedback-tab" id="tab-feedback">💬 Feedback</button>
         </div>
       </div>
 
@@ -575,7 +588,122 @@
         </div>
       </div>
 
-      >
+
+      <!-- ═══ AUTO-FIX / SCAN TAB ═══ -->
+      <div class="acc-panel-content" data-panel="autofix" id="panel-autofix" role="tabpanel" aria-labelledby="tab-autofix" tabindex="0">
+        <div class="acc-fix-body">
+
+          <div class="acc-score-card">
+            <div class="acc-score-ring">
+              <div>
+                <div class="acc-score-num" id="acc-score">—</div>
+                <div class="acc-score-label">/100</div>
+              </div>
+            </div>
+            <div class="acc-score-sub" id="acc-score-sub">Run a scan to check this page</div>
+            <div class="acc-stats">
+              <div class="acc-stat">
+                <div class="acc-stat-n g" id="acc-n-fixed">—</div>
+                <div class="acc-stat-l">Fixed</div>
+              </div>
+              <div class="acc-stat">
+                <div class="acc-stat-n y" id="acc-n-warn">—</div>
+                <div class="acc-stat-l">Warnings</div>
+              </div>
+              <div class="acc-stat">
+                <div class="acc-stat-n r" id="acc-n-err">—</div>
+                <div class="acc-stat-l">Failures</div>
+              </div>
+            </div>
+          </div>
+
+          <div style="font-size:.72rem;color:var(--acc-muted);background:rgba(79,142,247,.06);border:1px solid rgba(79,142,247,.15);border-radius:8px;padding:9px 12px;line-height:1.6;">
+            ℹ️ Scans this page only. The widget runs on every page of your site — each page visited contributes to your site-wide score in your ACC dashboard.
+          </div>
+
+          <button class="acc-scan-btn" id="acc-scan" aria-label="Run accessibility scan on this page">
+            ♿ Scan This Page
+          </button>
+
+          <div class="acc-issues" id="acc-issues">
+            <div style="text-align:center;color:var(--acc-muted);font-size:.82rem;padding:20px 0;line-height:1.7;">
+              Click <strong style="color:var(--acc-accent)">Scan This Page</strong> to check for accessibility issues.<br>
+              <span style="font-size:.72rem;">Auto-fixes are applied immediately.</span>
+            </div>
+          </div>
+
+          <button class="acc-dl-btn" id="acc-dl-now" disabled aria-label="Download accessibility report for this page">
+            ↓ Download Page Report
+          </button>
+
+        </div>
+      </div>
+
+      <!-- ═══ HISTORY TAB ═══ -->
+      <div class="acc-panel-content" data-panel="history" id="panel-history" role="tabpanel" aria-labelledby="tab-history" tabindex="0">
+        <div class="acc-hist-body">
+          <div style="font-size:.72rem;color:var(--acc-muted);background:rgba(79,142,247,.06);border:1px solid rgba(79,142,247,.15);border-radius:8px;padding:9px 12px;line-height:1.6;margin-bottom:4px;">
+            Scan history for <strong style="color:var(--acc-text)" id="acc-hist-page-label">this page</strong>. Each visit auto-scans in the background.
+          </div>
+          <div class="acc-hist-empty" id="acc-hist-empty">
+            No scans yet for this page.<br>
+            <span style="font-size:.75rem;">Open the Scan tab and run your first scan.</span>
+          </div>
+          <div id="acc-hist-list"></div>
+        </div>
+      </div>
+
+      <!-- ═══ FEEDBACK TAB ═══ -->
+      <div class="acc-panel-content" data-panel="feedback" id="panel-feedback-tab" role="tabpanel" aria-labelledby="tab-feedback" tabindex="0">
+        <div class="acc-body">
+          <div class="acc-section">Submit Feedback</div>
+          <p style="font-size:.75rem;color:var(--acc-muted);line-height:1.6;padding:8px 0;">
+            Found an accessibility issue on this website? Let us know and we'll work to fix it.
+          </p>
+
+          <div id="acc-fb-success" style="display:none;background:rgba(56,217,169,.1);border:1px solid rgba(56,217,169,.3);border-radius:10px;padding:12px 14px;font-size:.82rem;color:var(--acc-accent2);text-align:center;">
+            ✓ Thank you! Your feedback has been submitted.
+          </div>
+
+          <div id="acc-fb-form">
+            <div style="display:flex;flex-direction:column;gap:8px;">
+              <div>
+                <label for="acc-fb-type" style="font-size:.72rem;font-weight:600;color:var(--acc-muted);display:block;margin-bottom:4px;text-transform:uppercase;letter-spacing:.08em;">Type</label>
+                <select id="acc-fb-type" style="width:100%;background:var(--acc-surface);border:1px solid var(--acc-border);border-radius:8px;color:var(--acc-text);font-family:var(--acc-font);font-size:.82rem;padding:8px 10px;outline:none;cursor:pointer;">
+                  <option value="contrast">Colour / Contrast</option>
+                  <option value="navigation">Navigation / Keyboard</option>
+                  <option value="screen-reader">Screen Reader</option>
+                  <option value="captions">Captions / Media</option>
+                  <option value="other">Other</option>
+                </select>
+              </div>
+
+              <div>
+                <label for="acc-fb-msg" style="font-size:.72rem;font-weight:600;color:var(--acc-muted);display:block;margin-bottom:4px;text-transform:uppercase;letter-spacing:.08em;">Description</label>
+                <textarea id="acc-fb-msg" rows="3" placeholder="Describe the issue you encountered…"
+                  style="width:100%;background:var(--acc-surface);border:1px solid var(--acc-border);border-radius:8px;color:var(--acc-text);font-family:var(--acc-font);font-size:.82rem;padding:9px 10px;outline:none;resize:vertical;line-height:1.5;"></textarea>
+              </div>
+
+              <div>
+                <label for="acc-fb-email" style="font-size:.72rem;font-weight:600;color:var(--acc-muted);display:block;margin-bottom:4px;text-transform:uppercase;letter-spacing:.08em;">Your Email <span style="font-weight:400;text-transform:none;">(optional)</span></label>
+                <input id="acc-fb-email" type="email" placeholder="so we can follow up with you"
+                  style="width:100%;background:var(--acc-surface);border:1px solid var(--acc-border);border-radius:8px;color:var(--acc-text);font-family:var(--acc-font);font-size:.82rem;padding:8px 10px;outline:none;" />
+              </div>
+
+              <button id="acc-fb-submit"
+                style="width:100%;padding:11px;border-radius:10px;border:none;background:linear-gradient(135deg,var(--acc-accent),#3a6fd8);color:#fff;font-size:.85rem;font-weight:700;cursor:pointer;font-family:var(--acc-font);transition:opacity .15s;display:flex;align-items:center;justify-content:center;gap:8px;box-shadow:0 4px 14px rgba(79,142,247,.3);"
+                aria-label="Submit accessibility feedback">
+                💬 Submit Feedback
+              </button>
+
+              <p id="acc-fb-error" style="display:none;font-size:.75rem;color:var(--acc-error);text-align:center;padding:4px 0;"></p>
+            </div>
+          </div>
+
+          <div class="acc-section" style="margin-top:4px;">Page URL</div>
+          <p style="font-size:.72rem;color:var(--acc-muted);font-family:var(--acc-mono);word-break:break-all;" id="acc-fb-url"></p>
+        </div>
+      </div>
 
       <div class="acc-footer">
         <img src="${ACC_LOGO}" alt="" aria-hidden="true" />
@@ -987,155 +1115,561 @@
   // ══════════════════════════════════════════
   let lastAudit = null;
 
+  // ══════════════════════════════════════════════════════
+  // WCAG 2.1 AA SCANNER — Industry-standard rule engine
+  // Maps to WCAG success criteria, persists results to DB
+  // ══════════════════════════════════════════════════════
+
+  // ── Contrast helpers ───────────────────────────────────
+  function getLuminance(r, g, b) {
+    const toLinear = c => { c /= 255; return c <= 0.03928 ? c / 12.92 : Math.pow((c + 0.055) / 1.055, 2.4); };
+    return 0.2126 * toLinear(r) + 0.7152 * toLinear(g) + 0.0722 * toLinear(b);
+  }
+  function contrastRatio(rgb1, rgb2) {
+    const l1 = getLuminance(...rgb1), l2 = getLuminance(...rgb2);
+    return (Math.max(l1, l2) + 0.05) / (Math.min(l1, l2) + 0.05);
+  }
+  function parseRGB(str) {
+    const m = (str || '').match(/rgba?\((\d+),\s*(\d+),\s*(\d+)/);
+    return m ? [+m[1], +m[2], +m[3]] : null;
+  }
+  function getEffectiveBg(el) {
+    let node = el;
+    while (node && node !== document.documentElement) {
+      const bg = getComputedStyle(node).backgroundColor;
+      if (bg && bg !== 'rgba(0, 0, 0, 0)' && bg !== 'transparent') return parseRGB(bg);
+      node = node.parentElement;
+    }
+    return [255, 255, 255]; // fallback white
+  }
+  function getTextSize(el) {
+    const fs = parseFloat(getComputedStyle(el).fontSize) || 16;
+    const fw = getComputedStyle(el).fontWeight;
+    const bold = parseInt(fw) >= 700 || fw === 'bold' || fw === 'bolder';
+    return { px: fs, large: fs >= 18 || (bold && fs >= 14) };
+  }
+
+  // ── Rule engine ────────────────────────────────────────
   function runScan() {
     const issues = [];
+    const $ = sel => Array.from(document.querySelectorAll(sel)).filter(e => !widgetEl.contains(e));
 
-    if (!document.documentElement.getAttribute('lang')) {
-      document.documentElement.setAttribute('lang', 'en');
-      issues.push({ type:'fixed', icon:'🌐', title:'Page Language Set', desc:'Set lang="en" on <html>. Screen readers use this to select the correct speech synthesis voice.' });
-    }
-    (function(){
-      const imgs = Array.from(document.querySelectorAll('img')).filter(e => !widgetEl.contains(e));
-      let fixed=0, warned=0;
-      imgs.forEach(img => {
-        if (!img.hasAttribute('alt')) { const f=(img.getAttribute('src')||'').split('/').pop().replace(/\.[^.]+$/,'').replace(/[-_]/g,' '); img.setAttribute('alt',f&&f.length<80?f:'image'); fixed++; }
-        else if (img.getAttribute('alt')===img.getAttribute('src')) warned++;
-      });
-      if (fixed)  issues.push({ type:'fixed',   icon:'🖼', title:'Missing Alt Text Added',  desc:`Assigned alt attributes to ${fixed} image(s).`, count:fixed });
-      if (warned) issues.push({ type:'warning', icon:'🖼', title:'Alt Equals File Path',     desc:`${warned} image(s) have the file path as their alt.`, count:warned });
-    })();
-    (function(){
-      const links = Array.from(document.querySelectorAll('a')).filter(e => !widgetEl.contains(e));
-      let fixed=0, warned=0;
-      links.forEach(l => {
-        const txt=l.textContent.trim(), aria=l.getAttribute('aria-label')||l.getAttribute('title');
-        if (!txt&&!aria&&!l.querySelector('img[alt]')) { l.setAttribute('aria-label',l.getAttribute('href')||'link'); fixed++; }
-        else if (['click here','read more','here','more','link','details','learn more'].includes(txt.toLowerCase())) warned++;
-      });
-      if (fixed)  issues.push({ type:'fixed',   icon:'🔗', title:'Empty Links Labelled',  desc:`Added aria-label to ${fixed} anchor(s).`, count:fixed });
-      if (warned) issues.push({ type:'warning', icon:'🔗', title:'Vague Link Text',        desc:`${warned} link(s) use non-descriptive text.`, count:warned });
-    })();
-    (function(){
-      const btns = Array.from(document.querySelectorAll('button,input[type=submit],input[type=button]')).filter(e => !widgetEl.contains(e));
-      let fixed=0;
-      btns.forEach(b => { if (!(b.textContent||'').trim()&&!b.getAttribute('value')&&!b.getAttribute('aria-label')) { const t=b.querySelector('svg title'); b.setAttribute('aria-label',t?t.textContent:'button'); fixed++; }});
-      if (fixed) issues.push({ type:'fixed', icon:'🔘', title:'Unlabelled Buttons Fixed', desc:`Added aria-label to ${fixed} button(s).`, count:fixed });
-    })();
-    (function(){
-      const inputs = Array.from(document.querySelectorAll('input:not([type=hidden]):not([type=submit]):not([type=button]),select,textarea')).filter(e => !widgetEl.contains(e));
-      let fixed=0, warned=0;
-      inputs.forEach(inp => {
-        const lbl=inp.id?document.querySelector(`label[for="${inp.id}"]`):null;
-        const aria=inp.getAttribute('aria-label')||inp.getAttribute('aria-labelledby');
-        if (!lbl&&!aria) { inp.setAttribute('aria-label',inp.getAttribute('placeholder')||inp.getAttribute('name')||'field'); fixed++; }
-        else if (lbl&&!lbl.textContent.trim()) warned++;
-      });
-      if (fixed)  issues.push({ type:'fixed',   icon:'📝', title:'Unlabelled Inputs Fixed', desc:`Labelled ${fixed} form control(s).`, count:fixed });
-      if (warned) issues.push({ type:'warning', icon:'📝', title:'Empty Label Elements',    desc:`${warned} <label>(s) contain no text.`, count:warned });
-    })();
-    (function(){
-      if (!document.querySelector('[data-acc-skip],[href="#main"],[href="#content"],.skip-link,#skip-nav,[id*="skip"]')) {
-        const main = document.querySelector('main,[role=main],#main,#content');
-        if (main) {
-          if (!main.id) main.id='acc-main';
-          const skip=document.createElement('a');
-          skip.href='#'+main.id; skip.textContent='Skip to main content';
-          skip.setAttribute('data-acc-skip','1');
-          Object.assign(skip.style,{position:'absolute',top:'-999px',left:'0',zIndex:'9999999',background:'#0a1628',color:'#4f8ef7',padding:'8px 18px',borderRadius:'0 0 10px 0',fontFamily:'sans-serif',fontSize:'14px',textDecoration:'none',fontWeight:'600'});
-          skip.addEventListener('focus',()=>skip.style.top='0');
-          skip.addEventListener('blur',()=>skip.style.top='-999px');
-          document.body.insertBefore(skip,document.body.firstChild);
-          issues.push({ type:'fixed', icon:'⏭', title:'Skip Navigation Added', desc:'Keyboard users can now bypass navigation with one Tab press.' });
-        }
+    // ── HELPER: luminance & contrast ──────────────────
+    function lum(r,g,b){const s=c=>{c/=255;return c<=.03928?c/12.92:((c+.055)/1.055)**2.4;}; return .2126*s(r)+.7152*s(g)+.0722*s(b);}
+    function contrast(l1,l2){const [hi,lo]=[Math.max(l1,l2),Math.min(l1,l2)];return(hi+.05)/(lo+.05);}
+    function parseRgb(str){const m=str.match(/rgba?\((\d+),\s*(\d+),\s*(\d+)/);return m?[+m[1],+m[2],+m[3]]:null;}
+    function getBg(el){
+      let node=el;
+      while(node&&node!==document.body){
+        const bg=getComputedStyle(node).backgroundColor;
+        if(bg&&bg!=='rgba(0, 0, 0, 0)'&&bg!=='transparent'){const p=parseRgb(bg);if(p)return p;}
+        node=node.parentElement;
       }
+      const bodyBg=getComputedStyle(document.body).backgroundColor;
+      const p=parseRgb(bodyBg);
+      return p||[255,255,255]; // default white, NOT navy
+    }
+    function push(type,criterion,level,icon,title,desc,count,fixApplied){
+      issues.push({type,criterion,level,icon,title,desc,count:count||null,fixApplied:!!fixApplied});
+    }
+
+    // ══════════════════════════════════════════════════
+    // WCAG 1.1.1 — Non-text Content (Level A)
+    // ══════════════════════════════════════════════════
+    ;(function(){
+      const imgs=$('img,input[type=image],[role=img]');
+      let fixed=0,warned=0,errors=0;
+      imgs.forEach(img=>{
+        const role=img.getAttribute('role');
+        const isDecor=img.getAttribute('alt')==='';
+        if(isDecor) return; // intentionally decorative ✓
+        const hasSrc=img.hasAttribute('src')||img.hasAttribute('srcset');
+        if(!img.hasAttribute('alt')&&role!=='presentation'){
+          // Auto-fix: use aria-label or title if present, otherwise flag as error
+          const lbl=img.getAttribute('aria-label')||img.getAttribute('title');
+          if(lbl){img.setAttribute('alt',lbl);fixed++;}
+          else{img.setAttribute('alt','');errors++;} // empty alt is safer than filename
+        } else if(img.getAttribute('alt')===img.getAttribute('src')){
+          warned++;
+        } else if(/\.(png|jpe?g|gif|webp|svg)$/i.test(img.getAttribute('alt')||'')){
+          warned++; // alt text looks like a filename
+        }
+      });
+      if(fixed)  push('fixed',  '1.1.1','A','🖼','Alt Text Restored',`Restored meaningful alt text from aria-label/title on ${fixed} image(s).`,fixed,true);
+      if(errors) push('error',  '1.1.1','A','🖼','Missing Alt Text',`${errors} image(s) have no alt attribute. Screen readers cannot describe these images.`,errors,false);
+      if(warned) push('warning','1.1.1','A','🖼','Poor Alt Text Quality',`${warned} image(s) have alt text that appears to be a filename or URL.`,warned,false);
     })();
-    if (!document.querySelector('main,[role=main]'))       issues.push({ type:'warning', icon:'🗺', title:'No <main> Landmark',   desc:'Add a <main> element around your primary content.' });
-    if (!document.querySelector('nav,[role=navigation]'))  issues.push({ type:'warning', icon:'🗺', title:'No <nav> Landmark',    desc:'Wrap navigation menus in a <nav> element.' });
-    (function(){
-      const hds=Array.from(document.querySelectorAll('h1,h2,h3,h4,h5,h6')).filter(h=>!widgetEl.contains(h));
+
+    // ══════════════════════════════════════════════════
+    // WCAG 1.3.1 — Info and Relationships (Level A)
+    // ══════════════════════════════════════════════════
+    ;(function(){
+      // Heading structure
+      const hds=$('h1,h2,h3,h4,h5,h6');
       const h1s=hds.filter(h=>h.tagName==='H1');
       let skipped=0;
       for(let i=1;i<hds.length;i++) if(parseInt(hds[i].tagName[1])-parseInt(hds[i-1].tagName[1])>1) skipped++;
-      if (!h1s.length)    issues.push({ type:'warning', icon:'📋', title:'No H1 Heading',          desc:'Every page needs exactly one <h1>.' });
-      if (h1s.length > 1) issues.push({ type:'warning', icon:'📋', title:'Multiple H1s',           desc:`Found ${h1s.length} H1 elements.`, count:h1s.length });
-      if (skipped)        issues.push({ type:'warning', icon:'📋', title:'Heading Levels Skipped', desc:`${skipped} non-sequential heading jump(s).`, count:skipped });
-    })();
-    (function(){
-      const frames=Array.from(document.querySelectorAll('iframe')).filter(e=>!widgetEl.contains(e));
-      let fixed=0;
-      frames.forEach(f=>{if(!f.getAttribute('title')&&!f.getAttribute('aria-label')){f.setAttribute('title','Embedded content');fixed++;}});
-      if (fixed) issues.push({ type:'fixed', icon:'🖥', title:'iFrames Titled', desc:`Added title to ${fixed} iframe(s).`, count:fixed });
-    })();
-    (function(){
-      const bad=Array.from(document.querySelectorAll('table')).filter(t=>!widgetEl.contains(t)&&(!t.querySelector('th')||!t.querySelector('caption'))).length;
-      if (bad) issues.push({ type:'warning', icon:'📊', title:'Tables Missing Semantics', desc:`${bad} table(s) lack <th> or <caption>.`, count:bad });
-    })();
-    (function(){
-      const media=Array.from(document.querySelectorAll('video[autoplay],audio[autoplay]')).filter(e=>!widgetEl.contains(e));
-      let fixed=0;
-      media.forEach(m=>{if(!m.muted){m.muted=true;fixed++;}});
-      if (fixed) issues.push({ type:'fixed', icon:'🔇', title:'Autoplay Media Muted', desc:`Muted ${fixed} auto-playing element(s).`, count:fixed });
-    })();
-    (function(){
-      const bad=Array.from(document.querySelectorAll('[tabindex]')).filter(e=>!widgetEl.contains(e)&&parseInt(e.getAttribute('tabindex'))>0).length;
-      if (bad) issues.push({ type:'warning', icon:'⌨', title:'Positive tabindex Values', desc:`${bad} element(s) disrupt keyboard focus order.`, count:bad });
-    })();
-    (function(){
-      const links=Array.from(document.querySelectorAll('a[target=_blank]')).filter(e=>!widgetEl.contains(e));
-      let fixed=0;
-      links.forEach(a=>{
-        const rel=a.getAttribute('rel')||'';
-        if(!rel.includes('noopener')) a.setAttribute('rel','noopener noreferrer');
-        const lbl=a.getAttribute('aria-label')||a.textContent.trim();
-        if(lbl&&!lbl.includes('new tab')) a.setAttribute('aria-label',lbl+' (opens in new tab)');
-        fixed++;
+      if(!h1s.length)    push('error',  '1.3.1','A','📋','No H1 Heading','Every page must have exactly one H1 to identify its main topic. Screen readers rely on this.',null,false);
+      if(h1s.length>1)   push('warning','1.3.1','A','📋','Multiple H1 Headings',`${h1s.length} H1 elements found. Only one H1 is recommended per page.`,h1s.length,false);
+      if(skipped)        push('warning','1.3.1','A','📋','Heading Levels Skipped',`${skipped} non-sequential heading jump(s) detected (e.g. H2 → H4). This breaks screen reader navigation.`,skipped,false);
+
+      // Tables
+      const tables=$('table');
+      let noTh=0,noCaption=0;
+      tables.forEach(t=>{
+        if(!t.querySelector('th')) noTh++;
+        if(!t.querySelector('caption')) noCaption++;
       });
-      if (fixed) issues.push({ type:'fixed', icon:'🔒', title:'External Links Secured', desc:`Applied rel="noopener noreferrer" to ${fixed} link(s).`, count:fixed });
-    })();
-    (function(){
-      if (!document.querySelector('meta[name=viewport]')) {
-        const m=document.createElement('meta'); m.name='viewport'; m.content='width=device-width,initial-scale=1'; document.head.appendChild(m);
-        issues.push({ type:'fixed', icon:'📱', title:'Viewport Meta Added', desc:'Injected <meta name="viewport"> for mobile scaling.' });
-      }
-    })();
-    // ARIA landmark check: missing role=main content
-    (function(){
-      const hasAriaLabel = Array.from(document.querySelectorAll('[aria-label],[aria-labelledby]')).filter(e=>!widgetEl.contains(e)).length;
-      if (hasAriaLabel > 0) issues.push({ type:'fixed', icon:'♿', title:'ARIA Labels Detected', desc:`${hasAriaLabel} element(s) already have ARIA labels — good practice confirmed.`, count:hasAriaLabel });
-    })();
-    (function(){
-      let warned=0;
-      const els=Array.from(document.querySelectorAll('p,span,li,h1,h2,h3,h4,h5,h6,a,button,label')).filter(e=>!widgetEl.contains(e)&&e.textContent.trim());
-      els.slice(0,60).forEach(el=>{
-        try {
-          const cs=getComputedStyle(el);
-          const fgM=cs.color.match(/rgba?\((\d+),\s*(\d+),\s*(\d+)/);
-          if(!fgM) return;
-          // Walk up DOM to find actual background
-          let bgM=null;
-          let node=el;
-          while(node&&node!==document.body){
-            const bg=getComputedStyle(node).backgroundColor;
-            if(bg&&bg!=='rgba(0, 0, 0, 0)'&&bg!=='transparent'){
-              bgM=bg.match(/rgba?\((\d+),\s*(\d+),\s*(\d+)/);
-              break;
-            }
-            node=node.parentElement;
-          }
-          if(!bgM) bgM='rgb(10,22,40)'.match(/rgba?\((\d+),\s*(\d+),\s*(\d+)/); // fallback to --navy
-          const lum=(r,g,b)=>{const t=c=>{c/=255;return c<=.03928?c/12.92:Math.pow((c+.055)/1.055,2.4);}; return .2126*t(r)+.7152*t(g)+.0722*t(b);};
-          const l1=lum(+fgM[1],+fgM[2],+fgM[3]),l2=lum(+bgM[1],+bgM[2],+bgM[3]);
-          const ratio=(Math.max(l1,l2)+.05)/(Math.min(l1,l2)+.05);
-          if(ratio<4.5) warned++;
-        } catch(e){}
-      });
-      if (warned) issues.push({ type:'warning', icon:'🎨', title:'Potential Low Contrast Text', desc:`~${warned} text element(s) may fail WCAG AA (4.5:1 ratio).`, count:warned });
+      if(noTh)      push('error',  '1.3.1','A','📊','Data Tables Missing Headers',`${noTh} table(s) have no <th> elements. Screen readers cannot associate data with column/row headers.`,noTh,false);
+      if(noCaption) push('warning','1.3.1','A','📊','Tables Missing Caption',`${noCaption} table(s) have no <caption>. A caption identifies the table's purpose.`,noCaption,false);
+
+      // Lists used as layout (common pattern)
+      const listItems=$('ul>li,ol>li');
+      const hasProperLists=listItems.length>0;
+      // Only warn if no list structure at all on a content-heavy page
     })();
 
-    const nFixed=issues.filter(i=>i.type==='fixed').length;
-    const nWarn =issues.filter(i=>i.type==='warning').length;
-    const nErr  =issues.filter(i=>i.type==='error').length;
-    const score =Math.max(0,Math.round(100-nWarn*7-nErr*14));
+    // ══════════════════════════════════════════════════
+    // WCAG 1.3.2 — Meaningful Sequence (Level A)
+    // ══════════════════════════════════════════════════
+    ;(function(){
+      const posFixed=$('[style*="position:fixed"],[style*="position: fixed"]').filter(e=>!widgetEl.contains(e));
+      // Can't fully evaluate DOM order vs visual order from JS — flag if content uses absolute positioning heavily
+    })();
+
+    // ══════════════════════════════════════════════════
+    // WCAG 1.3.4 — Orientation (Level AA)
+    // ══════════════════════════════════════════════════
+    ;(function(){
+      const lockMeta=document.querySelector('meta[name=viewport]');
+      if(lockMeta){
+        const content=lockMeta.getAttribute('content')||'';
+        if(/user-scalable\s*=\s*no/i.test(content)||/maximum-scale\s*=\s*1[^.]?(?!\d)/i.test(content)){
+          push('error','1.3.4','AA','📱','Zoom/Scale Locked','The viewport meta tag prevents users from zooming. This fails WCAG 1.4.4 and 1.3.4.',null,false);
+        }
+      }
+    })();
+
+    // ══════════════════════════════════════════════════
+    // WCAG 1.3.5 — Identify Input Purpose (Level AA)
+    // ══════════════════════════════════════════════════
+    ;(function(){
+      const personalFields={
+        name:/\bname\b/i, email:/\bemail\b/i, tel:/\b(phone|tel)\b/i,
+        address:/\b(address|street|city|postal|zip|province|state)\b/i,
+        bday:/\b(birth|dob|birthday)\b/i,
+      };
+      const inputs=$('input[type=text],input[type=email],input[type=tel],input[type=url]');
+      let missing=0;
+      inputs.forEach(inp=>{
+        const name=(inp.getAttribute('name')||'').toLowerCase();
+        const id=(inp.getAttribute('id')||'').toLowerCase();
+        const auto=inp.getAttribute('autocomplete');
+        if(auto&&auto!=='off'&&auto!=='') return; // already set ✓
+        // Check if it looks like a personal field
+        for(const [type,rx] of Object.entries(personalFields)){
+          if(rx.test(name)||rx.test(id)){ missing++; break; }
+        }
+      });
+      if(missing) push('warning','1.3.5','AA','🏷','Missing autocomplete Attributes',`${missing} personal input field(s) appear to lack autocomplete attributes, making autofill harder for users with motor disabilities.`,missing,false);
+    })();
+
+    // ══════════════════════════════════════════════════
+    // WCAG 1.4.1 — Use of Colour (Level A)
+    // ══════════════════════════════════════════════════
+    ;(function(){
+      // Check required fields that use only colour (red border) with no other indicator
+      const required=$('[required],[aria-required=true]');
+      let onlyColor=0;
+      required.forEach(inp=>{
+        const cs=getComputedStyle(inp);
+        // If the element has a red border but no aria-describedby or visible label indicating required
+        const hasRequiredIndicator=inp.getAttribute('aria-describedby')||
+          document.querySelector(`label[for="${inp.id}"]`)?.textContent?.includes('*');
+        if(!hasRequiredIndicator) onlyColor++;
+      });
+      if(onlyColor) push('warning','1.4.1','A','🔴','Required Fields May Rely on Colour Only',`${onlyColor} required field(s) may not indicate their required status beyond colour alone. Add an asterisk (*) or text label.`,onlyColor,false);
+    })();
+
+    // ══════════════════════════════════════════════════
+    // WCAG 1.4.3 — Contrast (Minimum) (Level AA)
+    // ══════════════════════════════════════════════════
+    ;(function(){
+      const textEls=$('p,span,li,h1,h2,h3,h4,h5,h6,a,button,label,td,th,dt,dd,figcaption,caption,legend,blockquote');
+      let failAA=0,failAAA=0,passAA=0;
+      const sampled=textEls.filter(e=>e.textContent.trim().length>0).slice(0,200);
+      sampled.forEach(el=>{
+        try{
+          const cs=getComputedStyle(el);
+          const fg=parseRgb(cs.color);
+          if(!fg) return;
+          const bg=getBg(el);
+          const fontSize=parseFloat(cs.fontSize);
+          const isBold=parseInt(cs.fontWeight)>=700;
+          const isLarge=fontSize>=18||(isBold&&fontSize>=14);
+          const threshold=isLarge?3.0:4.5;   // AA: 4.5:1 normal, 3:1 large
+          const thresholdAAA=isLarge?4.5:7.0; // AAA
+          const ratio=contrast(lum(...fg),lum(...bg));
+          if(ratio<threshold) failAA++;
+          else if(ratio<thresholdAAA) failAAA++;
+          else passAA++;
+        }catch(e){}
+      });
+      if(failAA)  push('error',  '1.4.3','AA','🎨','Low Contrast Text (WCAG AA)',`~${failAA} of ${sampled.length} sampled text elements fail the 4.5:1 contrast ratio required for WCAG AA compliance.`,failAA,false);
+      if(failAAA&&!failAA) push('warning','1.4.3','AA','🎨','Contrast Could Be Improved (WCAG AAA)',`~${failAAA} text elements pass AA (4.5:1) but not AAA (7:1). Consider improving for best accessibility.`,failAAA,false);
+    })();
+
+    // ══════════════════════════════════════════════════
+    // WCAG 1.4.4 — Resize Text (Level AA)
+    // ══════════════════════════════════════════════════
+    ;(function(){
+      // Check for px font sizes that won't scale with user zoom preferences
+      const textEls=$('p,li,td,span').slice(0,50);
+      let pxFixed=0;
+      textEls.forEach(el=>{
+        const cs=getComputedStyle(el);
+        // Can't change CSS from JS easily; just detect and warn
+      });
+      const lockMeta=document.querySelector('meta[name=viewport]');
+      if(lockMeta&&/user-scalable\s*=\s*no/i.test(lockMeta.getAttribute('content')||'')){
+        push('error','1.4.4','AA','🔍','Text Resize Blocked','Viewport meta prevents browser zoom. Users who need larger text cannot resize it.',null,false);
+      }
+    })();
+
+    // ══════════════════════════════════════════════════
+    // WCAG 1.4.10 — Reflow (Level AA)
+    // ══════════════════════════════════════════════════
+    ;(function(){
+      // Detect horizontal scrollbar at 320px viewport (WCAG 1.4.10)
+      // We can't resize viewport from JS, but we can check for overflow:hidden on body
+      // which is a common anti-pattern that breaks reflow
+      const bodyCs=getComputedStyle(document.body);
+      const htmlCs=getComputedStyle(document.documentElement);
+      if(bodyCs.overflowX==='hidden'||htmlCs.overflowX==='hidden'){
+        push('warning','1.4.10','AA','↔','Horizontal Overflow Hidden','overflow-x:hidden on body or html may hide content that breaks at small viewports, violating WCAG 1.4.10 Reflow.',null,false);
+      }
+    })();
+
+    // ══════════════════════════════════════════════════
+    // WCAG 1.4.11 — Non-text Contrast (Level AA)
+    // ══════════════════════════════════════════════════
+    ;(function(){
+      const inputs=$('input:not([type=hidden]),select,textarea,button');
+      let warned=0;
+      inputs.slice(0,60).forEach(el=>{
+        try{
+          const cs=getComputedStyle(el);
+          const border=parseRgb(cs.borderColor);
+          if(!border) return;
+          const bg=getBg(el.parentElement||document.body);
+          const ratio=contrast(lum(...border),lum(...bg));
+          if(ratio<3.0) warned++;
+        }catch(e){}
+      });
+      if(warned) push('warning','1.4.11','AA','🖊','Low Contrast UI Components',`~${warned} form control border(s) may not meet the 3:1 contrast ratio required for non-text UI components (WCAG 1.4.11).`,warned,false);
+    })();
+
+    // ══════════════════════════════════════════════════
+    // WCAG 1.4.12 — Text Spacing (Level AA)
+    // ══════════════════════════════════════════════════
+    ;(function(){
+      // Check if the page uses CSS that overrides text-spacing with !important
+      // We can't fully test this without injecting a stylesheet
+      // Just note it as informational
+    })();
+
+    // ══════════════════════════════════════════════════
+    // WCAG 2.1.1 — Keyboard (Level A)
+    // ══════════════════════════════════════════════════
+    ;(function(){
+      // Interactive elements that aren't keyboard-accessible
+      const clickHandlers=$('[onclick]:not(a):not(button):not(input):not(select):not(textarea):not([role=button]):not([role=link]):not([tabindex])');
+      if(clickHandlers.length){
+        push('error','2.1.1','A','⌨','Click Handlers on Non-Interactive Elements',`${clickHandlers.length} element(s) have onclick but are not keyboard-reachable (missing role + tabindex). Keyboard-only users cannot activate these.`,clickHandlers.length,false);
+      }
+      // Elements with tabindex=0 that aren't interactive (keyboard reachable but no role)
+      const divFocusable=$('div[tabindex="0"],span[tabindex="0"]').filter(e=>{
+        const role=e.getAttribute('role');
+        return !role||!['button','link','checkbox','radio','tab','menuitem','option','combobox','listbox','slider','switch','treeitem'].includes(role);
+      });
+      if(divFocusable.length) push('warning','2.1.1','A','⌨','Focusable Non-Interactive Elements',`${divFocusable.length} div/span element(s) are focusable (tabindex=0) but have no ARIA role. Screen readers won't know what to do with them.`,divFocusable.length,false);
+    })();
+
+    // ══════════════════════════════════════════════════
+    // WCAG 2.1.2 — No Keyboard Trap (Level A)
+    // ══════════════════════════════════════════════════
+    ;(function(){
+      // Detect modal dialogs without focus trap management
+      const dialogs=$('[role=dialog],[role=alertdialog]');
+      dialogs.forEach(d=>{
+        if(!d.getAttribute('aria-modal')&&!d.getAttribute('aria-labelledby')&&!d.getAttribute('aria-label')){
+          push('warning','2.1.2','A','🪤','Dialog Missing ARIA Attributes',`A [role=dialog] element is missing aria-modal and aria-label/aria-labelledby. This can cause keyboard traps.`,null,false);
+        }
+      });
+    })();
+
+    // ══════════════════════════════════════════════════
+    // WCAG 2.4.1 — Bypass Blocks (Level A)
+    // ══════════════════════════════════════════════════
+    ;(function(){
+      const hasSkip=document.querySelector('[data-acc-skip],[href="#main"],[href="#content"],.skip-link,#skip-nav,[id*="skip"],[aria-label*="skip" i]');
+      if(!hasSkip){
+        const main=document.querySelector('main,[role=main],#main,#content');
+        if(main){
+          if(!main.id) main.id='acc-main';
+          const skip=document.createElement('a');
+          skip.href='#'+main.id; skip.textContent='Skip to main content';
+          skip.setAttribute('data-acc-skip','1');
+          Object.assign(skip.style,{position:'absolute',top:'-999px',left:'0',zIndex:'9999999',
+            background:'#0a1628',color:'#4f8ef7',padding:'8px 18px',
+            borderRadius:'0 0 10px 0',fontFamily:'sans-serif',fontSize:'14px',
+            textDecoration:'none',fontWeight:'600'});
+          skip.addEventListener('focus',()=>skip.style.top='0');
+          skip.addEventListener('blur',()=>skip.style.top='-999px');
+          document.body.insertBefore(skip,document.body.firstChild);
+          push('fixed','2.4.1','A','⏭','Skip Navigation Added','Keyboard users can now bypass repeated navigation with one Tab press.',null,true);
+        } else {
+          push('warning','2.4.1','A','⏭','No Skip Link & No <main> Element','Add a skip navigation link and a <main> element for keyboard users.',null,false);
+        }
+      }
+    })();
+
+    // ══════════════════════════════════════════════════
+    // WCAG 2.4.2 — Page Titled (Level A)
+    // ══════════════════════════════════════════════════
+    ;(function(){
+      const title=document.title||'';
+      if(!title.trim()) push('error','2.4.2','A','🏷','Page Has No Title','The <title> element is empty or missing. Screen readers announce the page title when users navigate between pages.',null,false);
+      else if(title.length<5||title.toLowerCase()==='home'||title.toLowerCase()==='index') push('warning','2.4.2','A','🏷','Page Title May Be Generic',`Page title "${title}" may not adequately describe the page's purpose.`,null,false);
+    })();
+
+    // ══════════════════════════════════════════════════
+    // WCAG 2.4.3 — Focus Order (Level A)
+    // ══════════════════════════════════════════════════
+    ;(function(){
+      const positive=$('[tabindex]').filter(e=>!widgetEl.contains(e)&&parseInt(e.getAttribute('tabindex'))>0);
+      if(positive.length) push('error','2.4.3','A','🔢','Positive tabindex Values Disrupt Focus Order',`${positive.length} element(s) use tabindex > 0 which overrides natural DOM focus order. Use tabindex="0" or "-1" only.`,positive.length,false);
+    })();
+
+    // ══════════════════════════════════════════════════
+    // WCAG 2.4.4 — Link Purpose (Level A)
+    // ══════════════════════════════════════════════════
+    ;(function(){
+      const vague=['click here','read more','here','more','link','details','learn more','continue','this','see more'];
+      const links=$('a[href]');
+      let vagueCount=0,emptyCount=0,fixed=0;
+      links.forEach(l=>{
+        const txt=(l.textContent||'').trim();
+        const aria=l.getAttribute('aria-label')||l.getAttribute('title');
+        if(!txt&&!aria&&!l.querySelector('img[alt]')){
+          l.setAttribute('aria-label',l.getAttribute('href')||'link');
+          fixed++; emptyCount++;
+        } else if(vague.includes((txt||aria||'').toLowerCase())) vagueCount++;
+      });
+      if(fixed)      push('fixed',  '2.4.4','A','🔗','Empty Links Labelled',`Added descriptive aria-label to ${fixed} link(s) with no visible text.`,fixed,true);
+      if(vagueCount) push('warning','2.4.4','A','🔗','Vague Link Text',`${vagueCount} link(s) use non-descriptive text like "click here" or "read more". Screen reader users navigating by links cannot determine the destination.`,vagueCount,false);
+    })();
+
+    // ══════════════════════════════════════════════════
+    // WCAG 2.4.7 — Focus Visible (Level AA)
+    // ══════════════════════════════════════════════════
+    ;(function(){
+      // Detect global outline:none or outline:0 in stylesheets
+      let outlineRemoved=false;
+      try{
+        for(const sheet of Array.from(document.styleSheets)){
+          try{
+            for(const rule of Array.from(sheet.cssRules||[])){
+              if(rule.style&&rule.style.outline==='none'&&/:focus/.test(rule.selectorText||'')) outlineRemoved=true;
+            }
+          }catch(e){}
+        }
+      }catch(e){}
+      if(outlineRemoved) push('error','2.4.7','AA','🔲','Focus Outline Removed via CSS','A CSS rule removes the focus outline on focused elements (`:focus { outline: none }`). Keyboard users cannot see where focus is.',null,false);
+    })();
+
+    // ══════════════════════════════════════════════════
+    // WCAG 2.5.5 — Target Size (Level AAA) / 2.5.8 AA (WCAG 2.2)
+    // ══════════════════════════════════════════════════
+    ;(function(){
+      const interactive=$('a,button,input,select,[role=button],[role=link]').slice(0,100);
+      let tooSmall=0;
+      interactive.forEach(el=>{
+        try{
+          const r=el.getBoundingClientRect();
+          if(r.width>0&&r.height>0&&(r.width<24||r.height<24)) tooSmall++;
+        }catch(e){}
+      });
+      if(tooSmall) push('warning','2.5.5','AA','🎯','Small Touch Targets',`${tooSmall} interactive element(s) appear smaller than 24×24px. WCAG 2.2 recommends a minimum 24×24px target size for pointer inputs.`,tooSmall,false);
+    })();
+
+    // ══════════════════════════════════════════════════
+    // WCAG 3.1.1 — Language of Page (Level A)
+    // ══════════════════════════════════════════════════
+    ;(function(){
+      const lang=document.documentElement.getAttribute('lang');
+      if(!lang){
+        document.documentElement.setAttribute('lang','en');
+        push('fixed','3.1.1','A','🌐','Page Language Set','Added lang="en" to <html>. Screen readers use this to select the correct speech synthesis voice.',null,true);
+      } else if(!/^[a-z]{2,3}(-[A-Z]{2})?$/.test(lang)){
+        push('warning','3.1.1','A','🌐','Invalid lang Attribute Value',`lang="${lang}" does not appear to be a valid BCP 47 language tag.`,null,false);
+      }
+    })();
+
+    // ══════════════════════════════════════════════════
+    // WCAG 3.2.1 — On Focus (Level A)
+    // ══════════════════════════════════════════════════
+    // Detecting focus-triggered context changes requires runtime monitoring — skipped
+
+    // ══════════════════════════════════════════════════
+    // WCAG 3.3.1 — Error Identification (Level A)
+    // ══════════════════════════════════════════════════
+    ;(function(){
+      const invalidInputs=$('[aria-invalid=true],[class*=error i],[class*=invalid i]');
+      let missingDesc=0;
+      invalidInputs.forEach(inp=>{
+        const describedBy=inp.getAttribute('aria-describedby');
+        if(!describedBy||!document.getElementById(describedBy)) missingDesc++;
+      });
+      if(missingDesc) push('warning','3.3.1','A','❌','Error Messages Not Programmatically Associated',`${missingDesc} invalid input(s) lack aria-describedby pointing to an error message element. Screen readers won't announce the error.`,missingDesc,false);
+    })();
+
+    // ══════════════════════════════════════════════════
+    // WCAG 3.3.2 — Labels or Instructions (Level A)
+    // ══════════════════════════════════════════════════
+    ;(function(){
+      const inputs=$('input:not([type=hidden]):not([type=submit]):not([type=button]):not([type=image]),select,textarea');
+      let fixed=0,errors=0;
+      inputs.forEach(inp=>{
+        const lbl=inp.id?document.querySelector(`label[for="${inp.id}"]`):null;
+        const aria=inp.getAttribute('aria-label')||inp.getAttribute('aria-labelledby');
+        const placeholder=inp.getAttribute('placeholder');
+        if(!lbl&&!aria){
+          if(placeholder){
+            inp.setAttribute('aria-label',placeholder);
+            fixed++;
+          } else {
+            errors++;
+          }
+        }
+        if(lbl&&!lbl.textContent.trim()) push('warning','3.3.2','A','📝','Empty Label Text',`A <label> for input "${inp.id||inp.name||'?'}" exists but contains no text.`,null,false);
+      });
+      if(fixed)  push('fixed','3.3.2','A','📝','Input Labels Added from Placeholder',`Added aria-label from placeholder text to ${fixed} unlabelled input(s). Note: placeholders disappear on focus — add a visible <label> for best practice.`,fixed,true);
+      if(errors) push('error','3.3.2','A','📝','Unlabelled Form Controls',`${errors} input(s) have no label, aria-label, or placeholder. Screen readers cannot identify these fields.`,errors,false);
+    })();
+
+    // ══════════════════════════════════════════════════
+    // WCAG 4.1.1 — Parsing (Level A)
+    // ══════════════════════════════════════════════════
+    ;(function(){
+      // Duplicate IDs
+      const allIds=Array.from(document.querySelectorAll('[id]')).filter(e=>!widgetEl.contains(e)).map(e=>e.id);
+      const dupeIds=allIds.filter((id,i)=>allIds.indexOf(id)!==i);
+      const uniqueDupes=[...new Set(dupeIds)];
+      if(uniqueDupes.length) push('error','4.1.1','A','🆔','Duplicate ID Attributes',`${uniqueDupes.length} ID(s) appear more than once: "${uniqueDupes.slice(0,3).join('", "')}". Duplicate IDs break ARIA references and break HTML spec.`,uniqueDupes.length,false);
+    })();
+
+    // ══════════════════════════════════════════════════
+    // WCAG 4.1.2 — Name, Role, Value (Level A)
+    // ══════════════════════════════════════════════════
+    ;(function(){
+      // Buttons
+      const btns=$('button,input[type=submit],input[type=button],input[type=reset],[role=button]');
+      let fixed=0,errors=0;
+      btns.forEach(b=>{
+        const txt=(b.textContent||'').trim()||(b.getAttribute('value')||'').trim();
+        const aria=b.getAttribute('aria-label')||b.getAttribute('aria-labelledby');
+        if(!txt&&!aria){
+          const svgTitle=b.querySelector('svg title');
+          const imgAlt=b.querySelector('img[alt]');
+          const lbl=svgTitle?.textContent||imgAlt?.getAttribute('alt');
+          if(lbl){b.setAttribute('aria-label',lbl);fixed++;}
+          else errors++;
+        }
+      });
+      if(fixed)  push('fixed','4.1.2','A','🔘','Icon Buttons Labelled',`Added aria-label to ${fixed} button(s) using SVG title or image alt text.`,fixed,true);
+      if(errors) push('error','4.1.2','A','🔘','Unlabelled Buttons',`${errors} button(s) have no accessible name. Screen readers will announce them as just "button".`,errors,false);
+
+      // Invalid ARIA roles
+      const validRoles=['alert','alertdialog','application','article','banner','button','cell','checkbox',
+        'columnheader','combobox','complementary','contentinfo','definition','dialog','directory',
+        'document','feed','figure','form','grid','gridcell','group','heading','img','link','list',
+        'listbox','listitem','log','main','marquee','math','menu','menubar','menuitem','menuitemcheckbox',
+        'menuitemradio','navigation','none','note','option','presentation','progressbar','radio',
+        'radiogroup','region','row','rowgroup','rowheader','scrollbar','search','searchbox','separator',
+        'slider','spinbutton','status','switch','tab','table','tablist','tabpanel','term','textbox',
+        'timer','toolbar','tooltip','tree','treegrid','treeitem'];
+      const roleEls=$('[role]');
+      let badRole=0;
+      roleEls.forEach(e=>{
+        const roles=(e.getAttribute('role')||'').split(/\s+/).filter(Boolean);
+        roles.forEach(r=>{ if(!validRoles.includes(r)) badRole++; });
+      });
+      if(badRole) push('error','4.1.2','A','♿','Invalid ARIA Role Values',`${badRole} element(s) use ARIA role values that are not in the ARIA specification. These will be ignored or cause errors in screen readers.`,badRole,false);
+
+      // iFrames
+      const frames=$('iframe');
+      let fixed2=0;
+      frames.forEach(f=>{
+        if(!f.getAttribute('title')&&!f.getAttribute('aria-label')){
+          const src=(f.getAttribute('src')||'').split('/').pop()||'Embedded content';
+          f.setAttribute('title',src.replace(/[?#].*/,'').replace(/\.[^.]+$/,'').replace(/[-_]/g,' ')||'Embedded content');
+          fixed2++;
+        }
+      });
+      if(fixed2) push('fixed','4.1.2','A','🖥','iFrames Titled',`Added title attribute to ${fixed2} iframe(s).`,fixed2,true);
+
+      // Landmark check
+      if(!document.querySelector('main,[role=main]'))        push('error',  '4.1.2','A','🗺','No <main> Landmark','Add a <main> element to identify the primary content area. Screen reader users navigate by landmarks.',null,false);
+      if(!document.querySelector('nav,[role=navigation]'))   push('warning','4.1.2','A','🗺','No <nav> Landmark','Wrap primary navigation in a <nav> element for screen reader landmark navigation.',null,false);
+      if(!document.querySelector('header,[role=banner]'))    push('warning','4.1.2','A','🗺','No <header> Landmark','Add a <header> element for the page banner area.',null,false);
+      if(!document.querySelector('footer,[role=contentinfo]')) push('warning','4.1.2','A','🗺','No <footer> Landmark','Add a <footer> element for page footer content.',null,false);
+    })();
+
+    // ══════════════════════════════════════════════════
+    // MEDIA & TECHNICAL FIXES
+    // ══════════════════════════════════════════════════
+    ;(function(){
+      // Autoplay media
+      const media=$('video[autoplay],audio[autoplay]');
+      let fixed=0;
+      media.forEach(m=>{if(!m.muted){m.muted=true;fixed++;}});
+      if(fixed) push('fixed','1.4.2','A','🔇','Autoplay Media Muted',`Muted ${fixed} auto-playing media element(s) to prevent unexpected audio.`,fixed,true);
+
+      // External links
+      const extLinks=$('a[target=_blank]');
+      let fixedExt=0;
+      extLinks.forEach(a=>{
+        const rel=a.getAttribute('rel')||'';
+        if(!rel.includes('noopener')) a.setAttribute('rel',(rel+' noopener noreferrer').trim());
+        const lbl=a.getAttribute('aria-label')||a.textContent.trim();
+        if(lbl&&!lbl.includes('new tab')&&!lbl.includes('new window')) a.setAttribute('aria-label',lbl+' (opens in new tab)');
+        fixedExt++;
+      });
+      if(fixedExt) push('fixed','2.4.4','A','🔒','External Links Secured & Labelled',`Applied rel="noopener noreferrer" and "(opens in new tab)" to ${fixedExt} external link(s).`,fixedExt,true);
+
+      // Viewport meta (add if missing)
+      if(!document.querySelector('meta[name=viewport]')){
+        const m=document.createElement('meta');m.name='viewport';m.content='width=device-width,initial-scale=1';
+        document.head.appendChild(m);
+        push('fixed','1.3.4','AA','📱','Viewport Meta Added','Injected <meta name="viewport"> for proper mobile scaling.',null,true);
+      }
+    })();
+
+    // ══════════════════════════════════════════════════
+    // SCORE CALCULATION — WCAG-weighted
+    // A violations: -14 pts each
+    // AA violations: -7 pts each  
+    // Warnings: -3 pts each
+    // ══════════════════════════════════════════════════
+    const nFixed  = issues.filter(i=>i.type==='fixed').length;
+    const errorsA = issues.filter(i=>i.type==='error'&&i.level==='A').length;
+    const errorsAA= issues.filter(i=>i.type==='error'&&i.level==='AA').length;
+    const nWarn   = issues.filter(i=>i.type==='warning').length;
+    const nErr    = errorsA + errorsAA;
+    const score   = Math.max(0, Math.min(100, Math.round(
+      100 - errorsA*14 - errorsAA*7 - nWarn*3
+    )));
 
     document.getElementById('acc-score').textContent=score;
     document.getElementById('acc-n-fixed').textContent=nFixed;
@@ -1148,31 +1682,81 @@
     document.getElementById('acc-dl-now').disabled=false;
 
     const list=document.getElementById('acc-issues');
-    if (!issues.length) {
-      list.innerHTML='<div style="text-align:center;color:#38d9a9;font-size:.88rem;padding:24px 0;line-height:1.6;">🎉 Excellent! No issues found.</div>';
+    if(!issues.length){
+      list.innerHTML='<div style="text-align:center;color:#38d9a9;font-size:.88rem;padding:24px 0;line-height:1.6;">🎉 Excellent! No accessibility issues found.</div>';
     } else {
       const order={fixed:0,warning:1,error:2};
-      issues.sort((a,b)=>order[a.type]-order[b.type]);
+      issues.sort((a,b)=>order[b.type]-order[a.type]); // errors first
       list.innerHTML=issues.map(i=>`
         <div class="acc-issue ${i.type}">
           <div class="acc-issue-head">
             <div class="acc-issue-title">${i.icon} ${i.title}</div>
-            <span class="acc-badge ${i.type}">${i.type==='fixed'?'Fixed':i.type==='warning'?'Warn':'Critical'}</span>
+            <div style="display:flex;gap:5px;align-items:center;flex-shrink:0;">
+              <span style="font-size:.58rem;font-weight:700;padding:2px 5px;border-radius:4px;background:rgba(79,142,247,.15);color:#8a9bbf;">${i.level||'AA'}</span>
+              <span class="acc-badge ${i.type}">${i.type==='fixed'?'Fixed':i.type==='warning'?'Warn':'Fail'}</span>
+            </div>
           </div>
           <div class="acc-issue-desc">${i.desc}</div>
-          ${i.count&&i.count>1?`<div class="acc-issue-cnt">Affected: ${i.count} element(s)</div>`:''}
+          ${i.criterion?`<div class="acc-issue-cnt">WCAG ${i.criterion} — Level ${i.level||'AA'}${i.count&&i.count>1?` — ${i.count} element(s)`:''}</div>`:''}
         </div>`).join('');
     }
 
     const record={date:new Date().toLocaleString(),score,nFixed,nWarn,nErr,issues:JSON.parse(JSON.stringify(issues))};
     lastAudit=record;
     auditHistory.unshift(record);
-    if (auditHistory.length>20) auditHistory.length=20;
+    if(auditHistory.length>20) auditHistory.length=20;
     renderHistory();
-    announce(`Scan complete. Score: ${score} out of 100. ${nFixed} fixes applied, ${nWarn} warnings.`);
+    announce(`Scan complete. Score: ${score}/100. ${nFixed} fixes applied, ${nErr} failures, ${nWarn} warnings.`);
+
+    // ── POST scan results to Supabase (per page, per client) ──
+    // Each page visit = one scan record. Dashboard aggregates all pages
+    // into a site-wide score over time — matching UserWay/Accessibe architecture.
+    if (ACC_CLIENT) {
+      const wcagBreakdown = {
+        perceivable:    Math.max(0, Math.min(100, Math.round(100 - issues.filter(i=>i.type==='error'&&['1.1.1','1.3.1','1.3.4','1.3.5','1.4.1','1.4.3','1.4.4','1.4.10','1.4.11'].includes(i.criterion)).length*14 - issues.filter(i=>i.type==='warning'&&i.criterion&&i.criterion.startsWith('1.')).length*3))),
+        operable:       Math.max(0, Math.min(100, Math.round(100 - issues.filter(i=>i.type==='error'&&['2.1.1','2.1.2','2.4.1','2.4.2','2.4.3','2.4.4','2.4.7','2.5.5'].includes(i.criterion)).length*14 - issues.filter(i=>i.type==='warning'&&i.criterion&&i.criterion.startsWith('2.')).length*3))),
+        understandable: Math.max(0, Math.min(100, Math.round(100 - issues.filter(i=>i.type==='error'&&['3.1.1','3.2.1','3.3.1','3.3.2'].includes(i.criterion)).length*14 - issues.filter(i=>i.type==='warning'&&i.criterion&&i.criterion.startsWith('3.')).length*3))),
+        robust:         Math.max(0, Math.min(100, Math.round(100 - issues.filter(i=>i.type==='error'&&['4.1.1','4.1.2'].includes(i.criterion)).length*14 - issues.filter(i=>i.type==='warning'&&i.criterion&&i.criterion.startsWith('4.')).length*3))),
+      };
+
+      // Top failing criteria for report detail
+      const topFailures = issues
+        .filter(i=>i.type==='error')
+        .map(i=>i.criterion)
+        .filter((v,idx,arr)=>arr.indexOf(v)===idx)
+        .slice(0,5);
+
+      fetch(ACC_API_URL + '/rest/v1/scans', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'apikey':        ACC_ANON,
+          'Authorization': 'Bearer ' + ACC_ANON,
+          'Prefer':        'return=minimal',
+        },
+        body: JSON.stringify({
+          client_code:    ACC_CLIENT,
+          domain:         ACC_DOMAIN,
+          page_url:       window.location.href,
+          page_title:     document.title || window.location.pathname,
+          score,
+          critical:       nErr,
+          warnings:       nWarn,
+          fixes_applied:  nFixed,
+          aria:           issues.filter(i=>i.criterion&&i.criterion.startsWith('4.')).length,
+          perceivable:    wcagBreakdown.perceivable,
+          operable:       wcagBreakdown.operable,
+          understandable: wcagBreakdown.understandable,
+          robust:         wcagBreakdown.robust,
+          top_failures:   JSON.stringify(topFailures),
+          issue_count:    issues.length,
+          scanned_at:     new Date().toISOString(),
+        }),
+      }).catch(()=>{}); // silent — scan POST is non-blocking
+    }
+
     return record;
   }
-
   function renderHistory() {
     const empty=document.getElementById('acc-hist-empty');
     const list=document.getElementById('acc-hist-list');
@@ -1232,9 +1816,149 @@ tr.fixed td:first-child{border-left:3px solid #10b981}tr.warning td:first-child{
   });
   document.getElementById('acc-dl-now').addEventListener('click', () => { if (lastAudit) downloadReport(lastAudit); });
 
-  // ── Auto-scan on page load (silent background run) ──
+  // ── Auto-scan on page load ──
+  // Runs on every page the widget is embedded on.
+  // Results are posted to Supabase scans table (per page, per client)
+  // so the dashboard can aggregate a site-wide score over time.
   setTimeout(() => {
-    try { runScan(); } catch(e) {}
+    try {
+      const record = runScan();
+      // Visually signal the scan tab has results (badge on tab button)
+      const scanTab = document.getElementById('tab-autofix');
+      if (scanTab && record) {
+        const score = record.score;
+        const color = score >= 90 ? 'var(--acc-accent2)' : score >= 70 ? 'var(--acc-warn)' : 'var(--acc-error)';
+        const badge = document.createElement('span');
+        badge.textContent = score;
+        badge.style.cssText = `margin-left:4px;font-size:.6rem;font-weight:700;padding:1px 5px;border-radius:6px;background:${color};color:#fff;`;
+        scanTab.appendChild(badge);
+      }
+    } catch(e) {}
   }, 2000);
+
+
+  // ══════════════════════════════════════════
+  // 8. FEEDBACK SUBMISSION (client-specific)
+  // ══════════════════════════════════════════
+
+  // Set page URL display in feedback tab
+  const fbUrlEl = document.getElementById('acc-fb-url');
+  if (fbUrlEl) fbUrlEl.textContent = window.location.href;
+
+  document.getElementById('acc-fb-submit').addEventListener('click', async function() {
+    const btn      = this;
+    const msgEl    = document.getElementById('acc-fb-msg');
+    const typeEl   = document.getElementById('acc-fb-type');
+    const emailEl  = document.getElementById('acc-fb-email');
+    const errEl    = document.getElementById('acc-fb-error');
+    const successEl= document.getElementById('acc-fb-success');
+
+    const message = (msgEl.value || '').trim();
+    if (!message) {
+      errEl.textContent = 'Please describe the issue before submitting.';
+      errEl.style.display = 'block';
+      msgEl.focus();
+      return;
+    }
+
+    errEl.style.display = 'none';
+    btn.disabled = true;
+    btn.textContent = 'Submitting…';
+
+    const payload = {
+      client_id:    ACC_CLIENT || null,
+      client_code:  ACC_CLIENT || null,
+      domain:       ACC_DOMAIN,
+      type:         typeEl.value || 'other',
+      message:      message,
+      email:        (emailEl.value || '').trim() || null,
+      page_url:     window.location.href,
+      status:       'open',
+      source:       'widget',
+      created_at:   new Date().toISOString(),
+    };
+
+    try {
+      const res = await fetch(ACC_API_URL + '/rest/v1/feedback', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'apikey':        ACC_ANON,
+          'Authorization': 'Bearer ' + ACC_ANON,
+          'Prefer':        'return=minimal',
+        },
+        body: JSON.stringify(payload),
+      });
+
+      if (!res.ok) {
+        const err = await res.text();
+        throw new Error(err || 'Submission failed');
+      }
+
+      // Success — show confirmation, hide form
+      document.getElementById('acc-fb-form').style.display = 'none';
+      successEl.style.display = 'block';
+      announce('Feedback submitted successfully.');
+
+      // Reset form for next use after 4s
+      setTimeout(function() {
+        msgEl.value = '';
+        emailEl.value = '';
+        document.getElementById('acc-fb-form').style.display = 'block';
+        successEl.style.display = 'none';
+      }, 4000);
+
+    } catch(e) {
+      errEl.textContent = 'Could not submit — please try again or email us directly.';
+      errEl.style.display = 'block';
+    } finally {
+      btn.disabled = false;
+      btn.textContent = '💬 Submit Feedback';
+    }
+  });
+
+  // ══════════════════════════════════════════
+  // 9. LOAD & APPLY WIDGET SETTINGS FROM DB
+  // ══════════════════════════════════════════
+  (async function loadWidgetSettings() {
+    if (!ACC_CLIENT) return;
+    try {
+      const res = await fetch(
+        ACC_API_URL + '/rest/v1/widget_settings?client_id=eq.' + encodeURIComponent(ACC_CLIENT) + '&limit=1',
+        { headers: { 'apikey': ACC_ANON, 'Authorization': 'Bearer ' + ACC_ANON } }
+      );
+      if (!res.ok) return;
+      const rows = await res.json();
+      if (!rows || !rows.length) return;
+      const cfg = rows[0];
+
+      // Position
+      if (cfg.position) {
+        const pos = cfg.position.toLowerCase();
+        const toggle  = document.getElementById('acc-toggle');
+        const panelEl = document.getElementById('acc-panel');
+        const bottom = pos.includes('top') ? 'auto' : '24px';
+        const top    = pos.includes('top') ? '24px' : 'auto';
+        const right  = pos.includes('left') ? 'auto' : '24px';
+        const left   = pos.includes('left') ? '24px' : 'auto';
+        if (toggle)  { toggle.style.bottom=bottom; toggle.style.top=top; toggle.style.right=right; toggle.style.left=left; }
+        if (panelEl) { panelEl.style.bottom=pos.includes('top')?'auto':'100px'; panelEl.style.top=pos.includes('top')?'100px':'auto'; panelEl.style.right=right; panelEl.style.left=left; }
+      }
+
+      // Accent colour
+      if (cfg.accent_color) {
+        document.documentElement.style.setProperty('--acc-accent', cfg.accent_color);
+      }
+
+      // Hide/show tabs based on settings
+      const profilesTab = document.getElementById('tab-profiles');
+      const feedbackTab = document.getElementById('tab-feedback');
+      if (cfg.hide_profiles && profilesTab) profilesTab.style.display = 'none';
+      if (cfg.hide_feedback && feedbackTab) feedbackTab.style.display = 'none';
+
+    } catch(e) {
+      // Settings load failure is non-fatal
+    }
+  })();
 
 })();
