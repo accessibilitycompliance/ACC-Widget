@@ -348,9 +348,10 @@
         <div class="acc-tabs" role="tablist" aria-label="Accessibility settings sections">
           <button class="acc-tab acc-active" data-tab="profiles" role="tab" aria-selected="true"  aria-controls="panel-profiles" id="tab-profiles">👤 Profiles</button>
           <button class="acc-tab"            data-tab="settings" role="tab" aria-selected="false" aria-controls="panel-settings" id="tab-settings">⚙ Settings</button>
-          <button class="acc-tab"            data-tab="autofix"  role="tab" aria-selected="false" aria-controls="panel-autofix"  id="tab-autofix">🔍 Scan</button>
-          <button class="acc-tab"            data-tab="history"  role="tab" aria-selected="false" aria-controls="panel-history"  id="tab-history">🕑 History</button>
           <button class="acc-tab"            data-tab="feedback" role="tab" aria-selected="false" aria-controls="panel-feedback-tab" id="tab-feedback">💬 Feedback</button>
+          <!-- Scan and History tabs hidden from end users — data still collected in background -->
+          <button class="acc-tab" data-tab="autofix"  role="tab" aria-selected="false" aria-controls="panel-autofix"  id="tab-autofix"  style="display:none">🔍 Scan</button>
+          <button class="acc-tab" data-tab="history"  role="tab" aria-selected="false" aria-controls="panel-history"  id="tab-history"  style="display:none">🕑 History</button>
         </div>
       </div>
 
@@ -1866,7 +1867,6 @@ tr.fixed td:first-child{border-left:3px solid #10b981}tr.warning td:first-child{
     btn.textContent = 'Submitting…';
 
     const payload = {
-      client_id:    ACC_CLIENT || null,
       client_code:  ACC_CLIENT || null,
       domain:       ACC_DOMAIN,
       type:         typeEl.value || 'other',
@@ -1875,7 +1875,6 @@ tr.fixed td:first-child{border-left:3px solid #10b981}tr.warning td:first-child{
       page_url:     window.location.href,
       status:       'open',
       source:       'widget',
-      created_at:   new Date().toISOString(),
     };
 
     try {
@@ -1891,8 +1890,9 @@ tr.fixed td:first-child{border-left:3px solid #10b981}tr.warning td:first-child{
       });
 
       if (!res.ok) {
-        const err = await res.text();
-        throw new Error(err || 'Submission failed');
+        let errText = 'Submission failed';
+        try { const errJson = await res.json(); errText = errJson.message || errJson.hint || errText; } catch(_) { errText = await res.text() || errText; }
+        throw new Error(errText);
       }
 
       // Success — show confirmation, hide form
@@ -1909,7 +1909,7 @@ tr.fixed td:first-child{border-left:3px solid #10b981}tr.warning td:first-child{
       }, 4000);
 
     } catch(e) {
-      errEl.textContent = 'Could not submit — please try again or email us directly.';
+      errEl.textContent = 'Could not submit (' + (e.message||'').substring(0,120) + ') — please try again.';
       errEl.style.display = 'block';
     } finally {
       btn.disabled = false;
