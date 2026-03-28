@@ -2,26 +2,17 @@
   'use strict';
   if (document.getElementById('acc-widget-root')) return;
 
-  // ── Read client identity from script tag attributes ──
   const _script = document.currentScript ||
     document.querySelector('script[data-client]') ||
     document.querySelector('script[src*="ACC-Widget"]');
   const ACC_CLIENT  = _script ? (_script.getAttribute('data-client')  || '') : '';
   const ACC_TIER    = _script ? (_script.getAttribute('data-tier')    || '1') : '1';
   const ACC_DOMAIN  = _script ? (_script.getAttribute('data-domain')  || window.location.hostname) : window.location.hostname;
-  // ── Script-tag overrides — applied immediately, before Supabase round-trip ──
-  // dashboard.html writes these into the embed snippet so the widget
-  // looks correct from first paint, not after the async settings fetch.
   const ACC_COLOR_OVERRIDE = _script ? (_script.getAttribute('data-color') || '') : '';
   const ACC_POS_OVERRIDE   = _script ? (_script.getAttribute('data-position') || '') : '';
   const ACC_LANG_OVERRIDE  = _script ? (_script.getAttribute('data-lang') || 'en') : 'en';
   const ACC_HIDE_FB        = _script ? (_script.getAttribute('data-hide-feedback') === 'true') : false;
 
-  // ════════════════════════════════════════════════════════════
-  // TRANSLATIONS — 55 languages (full accessiBe parity)
-  // English is the base. Other languages override individual keys.
-  // RTL languages (ar, he, fa, ur) trigger dir="rtl" on the panel.
-  // ════════════════════════════════════════════════════════════
   const ACC_RTL = new Set(['ar','he','fa','ur']);
 
   const _EN = {
@@ -70,193 +61,7 @@
     noIssues:'Excellent! No accessibility issues found.',
   };
 
-  const _LANGS = {
-    en:{},
-    fr:{title:'ACC Accessibilit\u00e9',subtitle:'Propuls\u00e9 par Auto AI Engine',close:'Fermer le panneau',
-      tabProfiles:'Profils',tabSettings:'Param\u00e8tres',tabFeedback:'Commentaires',
-      profilesIntro:'S\u00e9lectionnez un profil pour appliquer des param\u00e8tres d\u2019accessibilit\u00e9 adapt\u00e9s.',
-      profileVI:'Malvoyant',profileVIDesc:'Texte agrandi, contraste \u00e9lev\u00e9',
-      profileCog:'Cognitif / Apprentissage',profileCogDesc:'Police dyslexie, espacement, pas d\u2019animations',
-      profileMotor:'Moteur / Physique',profileMotorDesc:'Grand curseur, grandes cibles, navigation clavier',
-      profileDeaf:'Sourd / Malentendant',profileDeafDesc:'Liens surlign\u00e9s, m\u00e9dias muets',
-      profileADHD:'TDAH Friendly',profileADHDDesc:'Stimulus r\u00e9duit, pas d\u2019animations',
-      profileSenior:'Senior Friendly',profileSeniorDesc:'Texte agrandi, grand curseur',
-      secContent:'Contenu',secVision:'Vision',secNavFocus:'Navigation & Focus',
-      secReading:'Lecture',secMotion:'Mouvement & M\u00e9dias',
-      fontSize:'Taille du texte',lineHeight:'Interligne',letterSpacing:'Espacement lettres',wordSpacing:'Espacement mots',
-      fontFamily:'Police',fontDefault:'D\u00e9faut',fontDyslexia:'Dyslexie',fontReadable:'Lisible',
-      textAlign:'Alignement',colourFilter:'Filtre couleur',
-      focusRing:'Anneau de focus',focusRingSub:'Indicateur de focus clavier am\u00e9lior\u00e9',
-      keyboardNav:'Navigation clavier',keyboardNavSub:'Anneau de focus jaune haute visibilit\u00e9',
-      largeCursor:'Grand curseur',largeCursorSub:'Pointeur souris agrandi',
-      bigTargets:'Grandes cibles',bigTargetsSub:'Cible tactile min 44px',
-      highlightLinks:'Surligner les liens',highlightLinksSub:'Contour sur tous les hyperliens',
-      highlightHeadings:'Surligner les titres',highlightHeadingsSub:'Contour sur tous les H1-H6',
-      highlightHover:'Surligner au survol',highlightHoverSub:'Contour visuel au survol',
-      readingGuide:'Guide de lecture',readingGuideSub:'Surligne la ligne en cours',
-      readingMask:'Masque de lecture',readingMaskSub:'Assombrit la page au-dessus et en dessous',
-      textSpacing:'Espacement du texte',textSpacingSub:'Espacement suppl\u00e9mentaire (WCAG 1.4.12)',
-      pauseAnimations:'Mettre en pause',pauseAnimationsSub:'Arr\u00eate toutes les animations',
-      muteMedia:'Couper les m\u00e9dias',muteMediaSub:'Coupe les m\u00e9dias automatiques',
-      reduceStimulus:'R\u00e9duire le stimulus',reduceStimulusSub:'Couleurs douces, moins de bruit visuel',
-      resetAll:'\u21BA R\u00e9initialiser les param\u00e8tres',
-      feedbackTitle:'Envoyer un commentaire',
-      feedbackIntro:'Trouv\u00e9 un probl\u00e8me d\u2019accessibilit\u00e9 ? Faites-le nous savoir.',
-      feedbackType:'Type',feedbackMsg:'Description',feedbackEmail:'Votre e-mail',
-      feedbackEmailHint:'facultatif',feedbackSubmit:'Envoyer',
-      feedbackSuccess:'Merci ! Votre commentaire a \u00e9t\u00e9 envoy\u00e9.',
-      feedbackPlaceholder:'D\u00e9crivez le probl\u00e8me rencontr\u00e9\u2026',
-      typeContrast:'Couleur / Contraste',typeNav:'Navigation / Clavier',typeReader:'Lecteur d\u2019\u00e9cran',
-      typeCaptions:'Sous-titres / M\u00e9dias',typeOther:'Autre',
-      footer:'Widget ACC Accessibilit\u00e9 \u2014 Auto AI Engine',
-      activeProfile:'actif',clearProfile:'\u2715 Effacer',
-      scanThisPage:'\u267F Scanner cette page',scanComplete:'\u2713 Termin\u00e9 \u2014 Scanner \u00e0 nouveau',
-      scanning:'Scan en cours\u2026',dlReport:'T\u00e9l\u00e9charger le rapport',
-      noIssues:'Excellent ! Aucun probl\u00e8me trouv\u00e9.'},
-    es:{title:'ACC Accesibilidad',subtitle:'Impulsado por Auto AI Engine',close:'Cerrar panel',
-      tabProfiles:'Perfiles',tabSettings:'Configuraci\u00f3n',tabFeedback:'Comentarios',
-      profilesIntro:'Seleccione un perfil para aplicar configuraciones de accesibilidad.',
-      profileVI:'Discapacidad visual',profileVIDesc:'Texto grande, alto contraste',
-      profileCog:'Cognitivo / Aprendizaje',profileCogDesc:'Fuente dislexia, espaciado, sin animaciones',
-      profileMotor:'Motor / F\u00edsico',profileMotorDesc:'Cursor grande, objetivos grandes',
-      profileDeaf:'Sordo / Hipoacusia',profileDeafDesc:'Enlaces resaltados, medios silenciados',
-      profileADHD:'TDAH Friendly',profileADHDDesc:'Est\u00edmulo reducido, sin animaciones',
-      profileSenior:'Mayores Friendly',profileSeniorDesc:'Texto grande, cursor grande',
-      secContent:'Contenido',secVision:'Visi\u00f3n',secNavFocus:'Navegaci\u00f3n y Enfoque',
-      secReading:'Lectura',secMotion:'Movimiento y Medios',
-      fontSize:'Tama\u00f1o de fuente',lineHeight:'Altura de l\u00ednea',
-      letterSpacing:'Espacio entre letras',wordSpacing:'Espacio entre palabras',
-      fontFamily:'Fuente',fontDefault:'Predeterminado',fontDyslexia:'Dislexia',fontReadable:'Legible',
-      textAlign:'Alineaci\u00f3n',colourFilter:'Filtro de color',
-      focusRing:'Anillo de enfoque',focusRingSub:'Indicador de enfoque mejorado',
-      keyboardNav:'Navegaci\u00f3n por teclado',keyboardNavSub:'Anillo de enfoque amarillo',
-      largeCursor:'Cursor grande',largeCursorSub:'Puntero ampliado',
-      bigTargets:'Objetivos grandes',bigTargetsSub:'Objetivo t\u00e1ctil m\u00edn 44px',
-      highlightLinks:'Resaltar enlaces',highlightLinksSub:'Contorno en hipervínculos',
-      highlightHeadings:'Resaltar encabezados',highlightHeadingsSub:'Contorno en H1-H6',
-      highlightHover:'Resaltar al pasar',highlightHoverSub:'Contorno visual al pasar',
-      readingGuide:'Gu\u00eda de lectura',readingGuideSub:'Resalta la l\u00ednea de lectura',
-      readingMask:'M\u00e1scara de lectura',readingMaskSub:'Oscurece la p\u00e1gina',
-      textSpacing:'Espaciado de texto',textSpacingSub:'Espaciado adicional (WCAG 1.4.12)',
-      pauseAnimations:'Pausar animaciones',pauseAnimationsSub:'Detiene todas las animaciones',
-      muteMedia:'Silenciar medios',muteMediaSub:'Silencia audio y v\u00eddeo',
-      reduceStimulus:'Reducir est\u00edmulo',reduceStimulusSub:'Colores suaves, menos ruido',
-      resetAll:'\u21BA Restablecer configuraci\u00f3n',
-      feedbackTitle:'Enviar comentario',feedbackIntro:'\u00BFEncontr\u00f3 un problema? Av\u00edsenos.',
-      feedbackType:'Tipo',feedbackMsg:'Descripci\u00f3n',feedbackEmail:'Su correo',
-      feedbackEmailHint:'opcional',feedbackSubmit:'Enviar',
-      feedbackSuccess:'\u00A1Gracias! Su comentario fue enviado.',
-      feedbackPlaceholder:'Describa el problema\u2026',
-      typeContrast:'Color / Contraste',typeNav:'Navegaci\u00f3n / Teclado',typeReader:'Lector de pantalla',
-      typeCaptions:'Subt\u00edtulos / Medios',typeOther:'Otro',
-      footer:'Widget de accesibilidad ACC \u2014 Auto AI Engine',
-      activeProfile:'activo',clearProfile:'\u2715 Limpiar',
-      scanThisPage:'\u267F Escanear p\u00e1gina',scanComplete:'\u2713 Completado \u2014 Escanear de nuevo',
-      scanning:'Escaneando\u2026',dlReport:'Descargar informe',
-      noIssues:'\u00A1Excelente! No se encontraron problemas.'},
-    de:{title:'ACC Barrierefreiheit',subtitle:'Powered by Auto AI Engine',close:'Panel schlie\u00dfen',
-      tabProfiles:'Profile',tabSettings:'Einstellungen',tabFeedback:'Feedback',
-      profilesIntro:'W\u00e4hlen Sie ein Profil f\u00fcr Barrierefreiheitseinstellungen.',
-      profileVI:'Sehbehinderung',profileVIDesc:'Gr\u00f6\u00dfere Schrift, hoher Kontrast',
-      profileCog:'Kognitiv / Lernen',profileCogDesc:'Legasthenie-Schrift, extra Abstand',
-      profileMotor:'Motorisch / K\u00f6rperlich',profileMotorDesc:'Gro\u00dfer Cursor, gr\u00f6\u00dfere Ziele',
-      profileDeaf:'Geh\u00f6rlos / Schwerh\u00f6rig',profileDeafDesc:'Links hervorgehoben, Medien stumm',
-      profileADHD:'ADHS Friendly',profileADHDDesc:'Reduzierter Stimulus',
-      profileSenior:'Senioren Friendly',profileSeniorDesc:'Gr\u00f6\u00dfere Schrift, gro\u00dfer Cursor',
-      secContent:'Inhalt',secVision:'Sehverm\u00f6gen',secNavFocus:'Navigation & Fokus',
-      secReading:'Lesen',secMotion:'Bewegung & Medien',
-      fontSize:'Schriftgr\u00f6\u00dfe',lineHeight:'Zeilenh\u00f6he',
-      letterSpacing:'Buchstabenabstand',wordSpacing:'Wortabstand',
-      fontFamily:'Schriftart',fontDefault:'Standard',fontDyslexia:'Legasthenie',fontReadable:'Lesbar',
-      textAlign:'Ausrichtung',colourFilter:'Farbfilter',
-      focusRing:'Fokusring',focusRingSub:'Verbesserter Tastaturfokusindikator',
-      keyboardNav:'Tastaturnavigation',keyboardNavSub:'Hochsichtbarer gelber Fokusring',
-      largeCursor:'Gro\u00dfer Cursor',largeCursorSub:'Vergr\u00f6\u00dferter Mauszeiger',
-      bigTargets:'Gro\u00dfe Ziele',bigTargetsSub:'Min. 44px Ber\u00fchrungsziel',
-      highlightLinks:'Links hervorheben',highlightLinksSub:'Umrandung aller Hyperlinks',
-      highlightHeadings:'\u00dcberschriften hervorheben',highlightHeadingsSub:'Umrandung aller H1-H6',
-      highlightHover:'Beim Hover hervorheben',highlightHoverSub:'Visuelle Umrandung bei Hover',
-      readingGuide:'Lesegef\u00fchrung',readingGuideSub:'Hebt die aktuelle Lesezeile hervor',
-      readingMask:'Lesemaske',readingMaskSub:'Verdunkelt die Seite',
-      textSpacing:'Textabstand',textSpacingSub:'Zus\u00e4tzlicher Abstand (WCAG 1.4.12)',
-      pauseAnimations:'Animationen pausieren',pauseAnimationsSub:'Stoppt alle Bewegungen',
-      muteMedia:'Medien stummschalten',muteMediaSub:'Stummt abspielende Medien',
-      reduceStimulus:'Stimulus reduzieren',reduceStimulusSub:'Sanftere Farben',
-      resetAll:'\u21BA Alle Einstellungen zur\u00fccksetzen',
-      feedbackTitle:'Feedback senden',feedbackIntro:'Barrierefreiheitsproblem gefunden? Teilen Sie es uns mit.',
-      feedbackType:'Typ',feedbackMsg:'Beschreibung',feedbackEmail:'Ihre E-Mail',
-      feedbackEmailHint:'optional',feedbackSubmit:'Senden',
-      feedbackSuccess:'Danke! Ihr Feedback wurde gesendet.',
-      feedbackPlaceholder:'Beschreiben Sie das gefundene Problem\u2026',
-      typeContrast:'Farbe / Kontrast',typeNav:'Navigation / Tastatur',typeReader:'Screenreader',
-      typeCaptions:'Untertitel / Medien',typeOther:'Sonstiges',
-      footer:'ACC Barrierefreiheits-Widget \u2014 Auto AI Engine',
-      activeProfile:'aktiv',clearProfile:'\u2715 L\u00f6schen',
-      scanThisPage:'\u267F Seite scannen',scanComplete:'\u2713 Fertig \u2014 Erneut scannen',
-      scanning:'Scannen\u2026',dlReport:'Bericht herunterladen',
-      noIssues:'Ausgezeichnet! Keine Probleme gefunden.'},
-    ar:{title:'\u0625\u0645\u0643\u0627\u0646\u064a\u0629 \u0627\u0644\u0648\u0635\u0648\u0644 ACC',
-      subtitle:'\u0645\u062f\u0639\u0648\u0645 \u0628\u0645\u062d\u0631\u0643 Auto AI',
-      close:'\u0625\u063a\u0644\u0627\u0642 \u0627\u0644\u0644\u0648\u062d\u0629',
-      tabProfiles:'\u0627\u0644\u0645\u0644\u0641\u0627\u062a',tabSettings:'\u0627\u0644\u0625\u0639\u062f\u0627\u062f\u0627\u062a',tabFeedback:'\u0627\u0644\u062a\u0639\u0644\u064a\u0642\u0627\u062a',
-      profilesIntro:'\u0627\u062e\u062a\u0631 \u0645\u0644\u0641\u0627\u064b \u0634\u062e\u0635\u064a\u0627\u064b \u0644\u062a\u0637\u0628\u064a\u0642 \u0625\u0639\u062f\u0627\u062f\u0627\u062a \u0625\u0645\u0643\u0627\u0646\u064a\u0629 \u0627\u0644\u0648\u0635\u0648\u0644.',
-      profileVI:'\u0636\u0639\u064a\u0641 \u0627\u0644\u0628\u0635\u0631',profileVIDesc:'\u0646\u0635 \u0623\u0643\u0628\u0631\u060c \u062a\u0628\u0627\u064a\u0646 \u0639\u0627\u0644\u064d',
-      profileCog:'\u0627\u0644\u0625\u062f\u0631\u0627\u0643',profileCogDesc:'\u062e\u0637 \u0639\u0633\u0631 \u0627\u0644\u0642\u0631\u0627\u0621\u0629\u060c \u062a\u0628\u0627\u0639\u062f \u0625\u0636\u0627\u0641\u064a',
-      profileMotor:'\u062d\u0631\u0643\u064a',profileMotorDesc:'\u0645\u0624\u0634\u0631 \u0643\u0628\u064a\u0631\u060c \u0623\u0647\u062f\u0627\u0641 \u0623\u0643\u0628\u0631',
-      profileDeaf:'\u0635\u0645 / \u0636\u0639\u0627\u0641 \u0633\u0645\u0639',profileDeafDesc:'\u0631\u0648\u0627\u0628\u0637 \u0645\u0636\u064a\u0626\u0629\u060c \u0648\u0633\u0627\u0626\u0637 \u0635\u0627\u0645\u062a\u0629',
-      profileADHD:'ADHD \u0645\u0646\u0627\u0633\u0628',profileADHDDesc:'\u062a\u062d\u0641\u064a\u0632 \u0645\u062e\u0641\u0636',
-      profileSenior:'\u0643\u0628\u0627\u0631 \u0627\u0644\u0633\u0646',profileSeniorDesc:'\u0646\u0635 \u0623\u0643\u0628\u0631\u060c \u0645\u0624\u0634\u0631 \u0643\u0628\u064a\u0631',
-      secContent:'\u0627\u0644\u0645\u062d\u062a\u0648\u0649',secVision:'\u0627\u0644\u0631\u0624\u064a\u0629',
-      secNavFocus:'\u0627\u0644\u062a\u0646\u0642\u0644 \u0648\u0627\u0644\u062a\u0631\u0643\u064a\u0632',
-      secReading:'\u0627\u0644\u0642\u0631\u0627\u0621\u0629',secMotion:'\u0627\u0644\u062d\u0631\u0643\u0629',
-      resetAll:'\u21BA \u0625\u0639\u0627\u062f\u0629 \u062a\u0639\u064a\u064a\u0646',
-      feedbackTitle:'\u0625\u0631\u0633\u0627\u0644 \u062a\u0639\u0644\u064a\u0642',
-      feedbackIntro:'\u0648\u062c\u062f\u062a \u0645\u0634\u0643\u0644\u0629\u061f \u0623\u062e\u0628\u0631\u0646\u0627.',
-      feedbackType:'\u0627\u0644\u0646\u0648\u0639',feedbackMsg:'\u0627\u0644\u0648\u0635\u0641',
-      feedbackEmail:'\u0628\u0631\u064a\u062f\u0643',feedbackEmailHint:'\u0627\u062e\u062a\u064a\u0627\u0631\u064a',
-      feedbackSubmit:'\u0625\u0631\u0633\u0627\u0644',feedbackSuccess:'\u0634\u0643\u0631\u0627\u064b! \u062a\u0645 \u0627\u0644\u0625\u0631\u0633\u0627\u0644.',
-      feedbackPlaceholder:'\u0635\u0641 \u0627\u0644\u0645\u0634\u0643\u0644\u0629\u2026',
-      activeProfile:'\u0646\u0634\u0637',clearProfile:'\u2715 \u0645\u0633\u062d',
-      footer:'\u0623\u062f\u0627\u0629 \u0625\u0645\u0643\u0627\u0646\u064a\u0629 \u0627\u0644\u0648\u0635\u0648\u0644 ACC',
-      scanThisPage:'\u267F \u0645\u0633\u062d \u0627\u0644\u0635\u0641\u062d\u0629',
-      scanComplete:'\u2713 \u0627\u0643\u062a\u0645\u0644',scanning:'\u062c\u0627\u0631\u064d \u0627\u0644\u0645\u0633\u062d\u2026',
-      dlReport:'\u062a\u0646\u0632\u064a\u0644 \u0627\u0644\u062a\u0642\u0631\u064a\u0631',
-      noIssues:'\u0645\u0645\u062a\u0627\u0632! \u0644\u0627 \u062a\u0648\u062c\u062f \u0645\u0634\u0627\u0643\u0644.'},
-    zh:{title:'ACC \u65e0\u969c\u788d',subtitle:'\u7531 Auto AI \u5f15\u64ce\u63d0\u4f9b',
-      close:'\u5173\u95ed\u9762\u677f',tabProfiles:'\u914d\u7f6e\u6587\u4ef6',
-      tabSettings:'\u8bbe\u7f6e',tabFeedback:'\u53cd\u9988',
-      profilesIntro:'\u9009\u62e9\u914d\u7f6e\u6587\u4ef6\u4ee5\u5e94\u7528\u65e0\u969c\u788d\u8bbe\u7f6e\u3002',
-      profileVI:'\u89c6\u89c9\u969c\u788d',profileVIDesc:'\u66f4\u5927\u6587\u5b57\uff0c\u9ad8\u5bf9\u6bd4\u5ea6',
-      profileCog:'\u8ba4\u77e5 / \u5b66\u4e60',profileCogDesc:'\u9605\u8bfb\u969c\u788d\u5b57\u4f53\uff0c\u65e0\u52a8\u753b',
-      profileMotor:'\u8fd0\u52a8',profileMotorDesc:'\u5927\u5149\u6807\uff0c\u952e\u76d8\u5bfc\u822a',
-      profileDeaf:'\u8059\u969c',profileDeafDesc:'\u5c55\u793a\u94fe\u63a5\uff0c\u9759\u97f3\u5a92\u4f53',
-      profileADHD:'ADHD \u53cb\u597d',profileADHDDesc:'\u51cf\u5c11\u523a\u6fc0\uff0c\u65e0\u52a8\u753b',
-      profileSenior:'\u8001\u5e74\u53cb\u597d',profileSeniorDesc:'\u66f4\u5927\u6587\u5b57\uff0c\u5927\u5149\u6807',
-      secContent:'\u5185\u5bb9',secVision:'\u89c6\u89c9',secNavFocus:'\u5bfc\u822a\u548c\u7126\u70b9',
-      secReading:'\u9605\u8bfb',secMotion:'\u52a8\u753b\u548c\u5a92\u4f53',
-      resetAll:'\u21BA \u91cd\u7f6e\u6240\u6709\u8bbe\u7f6e',
-      feedbackTitle:'\u63d0\u4ea4\u53cd\u9988',feedbackIntro:'\u53d1\u73b0\u65e0\u969c\u788d\u95ee\u9898\uff1f\u544a\u8bc9\u6211\u4eec\u3002',
-      feedbackType:'\u7c7b\u578b',feedbackMsg:'\u63cf\u8ff0',feedbackEmail:'\u60a8\u7684\u90ae\u7b71',
-      feedbackEmailHint:'\u53ef\u9009',feedbackSubmit:'\u63d0\u4ea4',
-      feedbackSuccess:'\u8c22\u8c22\uff01\u60a8\u7684\u53cd\u9988\u5df2\u63d0\u4ea4\u3002',
-      feedbackPlaceholder:'\u63cf\u8ff0\u60a8\u9047\u5230\u7684\u95ee\u9898\u2026',
-      activeProfile:'\u5df2\u6fc0\u6d3b',clearProfile:'\u2715 \u6e05\u9664',
-      footer:'ACC \u65e0\u969c\u788d\u63a7\u4ef6 \u2014 Auto AI \u5f15\u64ce',
-      scanThisPage:'\u267F \u626b\u63cf\u6b64\u9875',scanComplete:'\u2713 \u5b8c\u6210',
-      scanning:'\u626b\u63cf\u4e2d\u2026',dlReport:'\u4e0b\u8f7d\u62a5\u544a',
-      noIssues:'\u4f18\u79c0\uff01\u672a\u53d1\u73b0\u65e0\u969c\u788d\u95ee\u9898\u3002'},
-  };
-
-  // Merge: language-specific overrides on top of English base
-  function getTranslations(lang) {
-    var prefix = (lang || 'en').split('-')[0];
-    var overrides = _LANGS[lang] || _LANGS[prefix] || {};
-    var result = {};
-    var key;
-    for (key in _EN) result[key] = _EN[key];
-    for (key in overrides) result[key] = overrides[key];
-    return result;
-  }
+  function getTranslations() { return Object.assign({}, _EN); }
 
   function applyTranslation(T) {
     var panel = document.getElementById('acc-panel');
@@ -267,12 +72,10 @@
     if (subEl && T.subtitle) subEl.textContent = T.subtitle;
     var closeBtn = document.getElementById('acc-close');
     if (closeBtn && T.close) closeBtn.setAttribute('aria-label', T.close);
-    // Tabs
     var tabIds = {'tab-profiles':'tabProfiles','tab-settings':'tabSettings','tab-feedback':'tabFeedback'};
     Object.keys(tabIds).forEach(function(id) {
       var el = document.getElementById(id); if (el && T[tabIds[id]]) el.textContent = T[tabIds[id]];
     });
-    // Profile cards
     var profiles = {
       'visually-impaired':['profileVI','profileVIDesc'],'cognitive':['profileCog','profileCogDesc'],
       'motor':['profileMotor','profileMotorDesc'],'deaf':['profileDeaf','profileDeafDesc'],
@@ -287,12 +90,10 @@
     });
     var piEl = document.querySelector('#panel-profiles .acc-profiles-intro');
     if (piEl && T.profilesIntro) piEl.textContent = T.profilesIntro;
-    // Section labels
     var secMap = {'Content':T.secContent,'Vision':T.secVision,'Navigation & Focus':T.secNavFocus,'Reading':T.secReading,'Motion & Media':T.secMotion};
     document.querySelectorAll('#panel-settings .acc-section').forEach(function(el) {
       var raw = el.textContent.trim(); if (secMap[raw] && el.childNodes[0]) el.childNodes[0].textContent = secMap[raw] + ' ';
     });
-    // Toggle rows
     var tmap = {
       'acc-t-focus':['focusRing','focusRingSub'],'acc-t-keyboard':['keyboardNav','keyboardNavSub'],
       'acc-t-cursor':['largeCursor','largeCursorSub'],'acc-t-bigtargets':['bigTargets','bigTargetsSub'],
@@ -315,7 +116,6 @@
     });
     var resetBtn = document.getElementById('acc-reset');
     if (resetBtn && T.resetAll) resetBtn.textContent = T.resetAll;
-    // Feedback tab
     var fbSec = document.querySelector('#panel-feedback-tab .acc-section');
     if (fbSec && T.feedbackTitle && fbSec.childNodes[0]) fbSec.childNodes[0].textContent = T.feedbackTitle + '\u00a0';
     var fbIntro = document.querySelector('#panel-feedback-tab .acc-body > p');
@@ -332,7 +132,6 @@
       var vals = [T.typeContrast, T.typeNav, T.typeReader, T.typeCaptions, T.typeOther];
       opts.forEach(function(o,i){ if(vals[i]) o.textContent = vals[i]; });
     }
-    // Footer
     var footer = document.querySelector('.acc-footer');
     if (footer && T.footer) {
       var img = footer.querySelector('img');
@@ -352,769 +151,31 @@
 
   const auditHistory = [];
 
-  // ── Font link
   const fontLink = document.createElement('link');
   fontLink.rel = 'stylesheet';
   fontLink.href = 'https://fonts.googleapis.com/css2?family=Sora:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap';
   document.head.appendChild(fontLink);
 
-  // ══════════════════════════════════════════
-  // 1. STYLES
-  // ══════════════════════════════════════════
   const style = document.createElement('style');
   style.id = 'acc-widget-styles';
   style.textContent = `
-    :root {
-      --acc-dark:    #ffffff;
-      --acc-panel:   #ffffff;
-      --acc-surface: #f0f4ff;
-      --acc-border:  #dce6f8;
-      --acc-accent:  #4f8ef7;
-      --acc-accent2: #38d9a9;
-      --acc-warn:    #f5a623;
-      --acc-error:   #e53e3e;
-      --acc-text:    #0a1628;
-      --acc-muted:   #5a6e8c;
-      --acc-font:    'Sora', sans-serif;
-      --acc-mono:    'JetBrains Mono', monospace;
-    }
-
-    /* ── Toggle button ── */
-    #acc-toggle {
-      position: fixed; bottom: 24px; right: 24px;
-      width: 62px; height: 62px; border-radius: 16px;
-      background: #ffffff;
-      border: 2px solid #4f8ef7;
-      cursor: pointer; display: flex; flex-direction: column;
-      align-items: center; justify-content: center; gap: 3px;
-      box-shadow: 0 4px 20px rgba(79,142,247,.3), 0 2px 8px rgba(0,0,0,.12);
-      z-index: 2147483646; padding: 0; outline: none;
-      transition: transform .2s, box-shadow .3s, border-color .2s;
-    }
-    #acc-toggle:hover { transform: translateY(-2px); box-shadow: 0 8px 28px rgba(79,142,247,.4), 0 2px 8px rgba(0,0,0,.15); border-color: #3a6fd8; }
-    #acc-toggle:focus-visible { outline: 3px solid var(--acc-accent) !important; outline-offset: 3px !important; }
-    #acc-toggle img { width: 36px; height: 36px; object-fit: contain; }
-    #acc-toggle-label { display: none; }
-
-    /* ── Panel ── */
-    #acc-panel {
-      position: fixed; bottom: 100px; right: 24px;
-      width: min(400px, calc(100vw - 48px)); max-height: 86vh;
-      background: #ffffff;
-      border: 1px solid #dce6f8;
-      border-radius: 20px;
-      box-shadow: 0 8px 40px rgba(10,22,40,.15), 0 2px 12px rgba(79,142,247,.1);
-      z-index: 2147483645; overflow: hidden;
-      display: flex; flex-direction: column;
-      transform: scale(.92) translateY(16px); opacity: 0; pointer-events: none;
-      transition: transform .3s cubic-bezier(.34,1.56,.64,1), opacity .2s;
-      font-family: var(--acc-font); box-sizing: border-box;
-    }
-    #acc-panel.acc-open { transform: scale(1) translateY(0); opacity: 1; pointer-events: all; }
-    #acc-panel.acc-instant { transition: none !important; }
-    #acc-panel * { box-sizing: border-box; margin: 0; padding: 0; }
-
-    /* ── Wix iframe mode ── */
-    body.acc-in-iframe { overflow: hidden; }
-    body.acc-in-iframe #acc-toggle { position: absolute !important; bottom: 10px !important; right: 10px !important; }
-    body.acc-in-iframe #acc-panel  { position: absolute !important; overflow-y: auto !important; }
-
-    /* ── Header ── */
-    .acc-header { background: linear-gradient(135deg, #0a1628 0%, #0d1f3c 100%); border-bottom: 1px solid var(--acc-border); padding: 16px 18px 0; flex-shrink: 0; }
-    .acc-header-top { display: flex; align-items: center; gap: 10px; margin-bottom: 14px; }
-    .acc-header-logo { width: 32px; height: 32px; object-fit: contain; filter: brightness(1.15) drop-shadow(0 0 6px rgba(79,142,247,.3)); }
-    .acc-header-title { flex: 1; }
-    .acc-header-title h2 { font-size: .9rem; font-weight: 700; color: #ffffff; letter-spacing: .05em; text-transform: uppercase; }
-    .acc-header-title p { font-size: .7rem; color: rgba(255,255,255,.65); margin-top: 1px; }
-    .acc-close-btn { width: 28px; height: 28px; border-radius: 8px; border: 1px solid rgba(255,255,255,.2); background: rgba(255,255,255,.12); color: rgba(255,255,255,.8); cursor: pointer; display: flex; align-items: center; justify-content: center; font-size: 14px; transition: background .15s, color .15s; }
-    .acc-close-btn:hover { background: rgba(255,255,255,.22); color: #ffffff; }
-    .acc-close-btn:focus-visible { outline: 2px solid var(--acc-accent); outline-offset: 2px; }
-
-    /* ── Language picker — in header next to close button ── */
-    .acc-lang-wrap { position: relative; }
-    .acc-lang-btn {
-      display: flex; align-items: center; gap: 5px;
-      padding: 4px 10px 4px 8px;
-      background: rgba(255,255,255,.12); border: 1px solid rgba(255,255,255,.2);
-      border-radius: 20px; color: rgba(255,255,255,.85); cursor: pointer;
-      font-family: var(--acc-font); font-size: .68rem; font-weight: 700;
-      white-space: nowrap; transition: background .15s, border-color .15s, color .15s;
-      letter-spacing: .04em;
-    }
-    .acc-lang-btn:hover { background: rgba(255,255,255,.22); border-color: rgba(255,255,255,.4); color: #ffffff; }
-    .acc-lang-btn:focus-visible { outline: 2px solid rgba(255,255,255,.6); outline-offset: 2px; }
-    .acc-lang-btn.acc-lang-active { background: rgba(79,142,247,.35); border-color: #4f8ef7; color: #ffffff; }
-    .acc-lang-globe { font-size: 13px; line-height: 1; }
-    .acc-lang-label { letter-spacing: .05em; }
-    .acc-lang-dropdown {
-      position: absolute; top: 34px; right: 0;
-      background: #ffffff; border: 1px solid #dce6f8;
-      border-radius: 12px; min-width: 224px; max-height: 280px;
-      overflow-y: auto; z-index: 9999; display: none;
-      box-shadow: 0 8px 32px rgba(10,22,40,.12), 0 2px 8px rgba(79,142,247,.08);
-      scrollbar-width: thin; scrollbar-color: #dce6f8 transparent;
-    }
-    .acc-lang-dropdown.acc-lang-open { display: block; }
-    .acc-lang-dropdown::-webkit-scrollbar { width: 4px; }
-    .acc-lang-dropdown::-webkit-scrollbar-thumb { background: var(--acc-border); border-radius: 4px; }
-    .acc-lang-search {
-      width: 100%; padding: 9px 12px; background: #f8f9fe;
-      border: none; border-bottom: 1px solid #dce6f8;
-      color: #0a1628; font-family: var(--acc-font); font-size: .78rem;
-      outline: none; border-radius: 12px 12px 0 0;
-    }
-    .acc-lang-search::placeholder { color: #8a9bbf; }
-    .acc-lang-option {
-      display: flex; align-items: center; gap: 8px;
-      padding: 8px 12px; font-size: .78rem; color: #5a6e8c;
-      cursor: pointer; transition: background .12s; border: none;
-      background: none; width: 100%; text-align: left; font-family: var(--acc-font);
-    }
-    .acc-lang-option:hover { background: #f0f4ff; color: #0a1628; }
-    .acc-lang-option.acc-lang-selected { color: #4f8ef7; background: #f0f4ff; font-weight: 600; }
-    .acc-lang-option .acc-lang-native { font-size: .68rem; color: #8a9bbf; margin-left: auto; flex-shrink: 0; }
-
-    /* ── Active profile badge in header ── */
-    .acc-active-profile-badge {
-      display: none; align-items: center; gap: 6px;
-      background: rgba(56,217,169,.12); border: 1px solid rgba(56,217,169,.3);
-      border-radius: 6px; padding: 4px 10px; margin-bottom: 10px;
-      font-size: .68rem; font-weight: 600; color: var(--acc-accent2);
-    }
-    .acc-active-profile-badge.visible { display: flex; }
-    .acc-active-profile-badge button {
-      background: none; border: none; color: var(--acc-muted); cursor: pointer;
-      font-size: .7rem; margin-left: auto; padding: 0 2px;
-      transition: color .15s;
-    }
-    .acc-active-profile-badge button:hover { color: var(--acc-error); }
-
-    /* ── Tabs ── */
-    .acc-tabs { display: flex; gap: 1px; padding-bottom: 0; overflow-x: auto; scrollbar-width: none; border-top: 1px solid #dce6f8; margin-top: 12px; background: #f8f9fe; }
-    .acc-tabs::-webkit-scrollbar { display: none; }
-    .acc-tab { flex: 1; padding: 9px 4px; font-size: .65rem; font-weight: 600; color: var(--acc-muted); cursor: pointer; border: none; background: none; letter-spacing: .03em; text-transform: uppercase; border-bottom: 2px solid transparent; transition: color .15s, border-color .15s; font-family: var(--acc-font); white-space: nowrap; }
-    .acc-tab.acc-active { color: var(--acc-accent); border-bottom-color: var(--acc-accent); }
-    .acc-tab:focus-visible { outline: 2px solid var(--acc-accent); outline-offset: -2px; }
-
-    /* ── Tab panels ── */
-    .acc-panel-content { display: none; flex: 1; overflow-y: auto; flex-direction: column; }
-    .acc-panel-content.acc-active { display: flex; }
-    .acc-panel-content::-webkit-scrollbar { width: 4px; }
-    .acc-panel-content::-webkit-scrollbar-track { background: transparent; }
-    .acc-panel-content::-webkit-scrollbar-thumb { background: var(--acc-border); border-radius: 4px; }
-    .acc-body { padding: 14px; display: flex; flex-direction: column; gap: 7px; flex: 1; }
-
-    /* ── Section label ── */
-    .acc-section { font-size: .63rem; font-weight: 600; letter-spacing: .12em; text-transform: uppercase; color: #4f8ef7; margin: 6px 0 2px; font-family: var(--acc-mono); display: flex; align-items: center; gap: 6px; }
-    .acc-section::after { content: ''; flex: 1; height: 1px; background: #dce6f8; }
-
-    /* ── Toggle row ── */
-    .acc-row { display: flex; align-items: center; justify-content: space-between; background: #f8f9fe; border: 1px solid #dce6f8; border-radius: 10px; padding: 10px 12px; cursor: pointer; transition: background .15s, border-color .15s; user-select: none; }
-    .acc-row:hover { background: #0f2a50; border-color: #1a3a6b; }
-    .acc-row.acc-on { background: rgba(79,142,247,.08); border-color: rgba(79,142,247,.35); }
-    .acc-row:focus-visible { outline: 2px solid var(--acc-accent); outline-offset: 2px; }
-    .acc-row-label { display: flex; align-items: center; gap: 9px; font-size: .83rem; font-weight: 500; color: #0a1628; }
-    .acc-row-icon { font-size: 1.1rem; line-height: 1; width: 22px; text-align: center; }
-    .acc-row-sub { font-size: .68rem; color: #5a6e8c; margin-top: 1px; }
-    .acc-switch { width: 36px; height: 20px; background: var(--acc-border); border-radius: 99px; position: relative; transition: background .2s; flex-shrink: 0; }
-    .acc-switch::after { content: ''; position: absolute; top: 2px; left: 2px; width: 16px; height: 16px; background: #fff; border-radius: 50%; transition: transform .2s; box-shadow: 0 1px 4px rgba(0,0,0,.3); }
-    .acc-row.acc-on .acc-switch { background: var(--acc-accent); }
-    .acc-row.acc-on .acc-switch::after { transform: translateX(16px); }
-
-    /* ── Stepper ── */
-    .acc-stepper { display: flex; align-items: center; justify-content: space-between; background: var(--acc-surface); border: 1px solid var(--acc-border); border-radius: 10px; padding: 9px 12px; }
-    .acc-stepper-label { font-size: .83rem; font-weight: 500; color: var(--acc-text); display: flex; align-items: center; gap: 9px; }
-    .acc-stepper-ctrl { display: flex; align-items: center; gap: 8px; }
-    .acc-step-btn { width: 26px; height: 26px; border-radius: 7px; border: 1px solid var(--acc-border); background: var(--acc-dark); color: var(--acc-text); font-size: 1rem; cursor: pointer; display: flex; align-items: center; justify-content: center; transition: background .15s; font-weight: 700; line-height: 1; padding: 0; font-family: inherit; }
-    .acc-step-btn:hover { background: var(--acc-border); }
-    .acc-step-btn:focus-visible { outline: 2px solid var(--acc-accent); }
-    .acc-step-val { font-size: .8rem; font-family: var(--acc-mono); min-width: 42px; text-align: center; color: var(--acc-accent); font-weight: 500; }
-
-    /* ── Select row ── */
-    .acc-select-row { background: var(--acc-surface); border: 1px solid var(--acc-border); border-radius: 10px; padding: 9px 12px; display: flex; align-items: center; justify-content: space-between; gap: 10px; }
-    .acc-select-row select { background: var(--acc-dark); border: 1px solid var(--acc-border); border-radius: 6px; color: var(--acc-accent); font-family: var(--acc-mono); font-size: .78rem; padding: 4px 8px; outline: none; cursor: pointer; }
-    .acc-select-row select:focus { border-color: var(--acc-accent); }
-
-    /* ── Align buttons ── */
-    .acc-align-row { background: var(--acc-surface); border: 1px solid var(--acc-border); border-radius: 10px; padding: 9px 12px; display: flex; align-items: center; justify-content: space-between; gap: 10px; }
-    .acc-align-btns { display: flex; gap: 4px; }
-    .acc-align-btn { width: 30px; height: 26px; border-radius: 6px; border: 1px solid var(--acc-border); background: var(--acc-dark); color: var(--acc-muted); font-size: .85rem; cursor: pointer; display: flex; align-items: center; justify-content: center; transition: background .15s, border-color .15s, color .15s; padding: 0; }
-    .acc-align-btn:hover { background: var(--acc-border); }
-    .acc-align-btn.acc-active-align { background: rgba(79,142,247,.15); border-color: var(--acc-accent); color: var(--acc-accent); }
-
-    /* ── Colour swatches ── */
-    .acc-colors-box { background: var(--acc-surface); border: 1px solid var(--acc-border); border-radius: 10px; padding: 11px 12px; }
-    .acc-colors-label { font-size: .83rem; font-weight: 500; color: var(--acc-text); margin-bottom: 9px; display: flex; align-items: center; gap: 8px; }
-    .acc-swatches { display: flex; gap: 7px; flex-wrap: wrap; }
-    .acc-swatch { width: 30px; height: 30px; border-radius: 8px; border: 2px solid transparent; cursor: pointer; transition: transform .15s, border-color .15s, box-shadow .15s; outline: none; padding: 0; font-size: .6rem; display: flex; align-items: center; justify-content: center; font-weight: 700; }
-    .acc-swatch:hover { transform: scale(1.1); }
-    .acc-swatch:focus-visible { outline: 2px solid var(--acc-accent); }
-    .acc-swatch.acc-picked { border-color: var(--acc-accent) !important; box-shadow: 0 0 0 3px rgba(79,142,247,.25); transform: scale(1.1); }
-
-    /* ── Reset ── */
-    .acc-reset { width: 100%; padding: 10px; border-radius: 10px; margin-top: 2px; border: 1px solid rgba(247,95,95,.3); background: rgba(247,95,95,.08); color: var(--acc-error); font-size: .82rem; font-weight: 600; cursor: pointer; font-family: var(--acc-font); transition: background .15s; }
-    .acc-reset:hover { background: rgba(247,95,95,.15); }
-    .acc-reset:focus-visible { outline: 2px solid var(--acc-error); }
-
-    /* ════════════════════════════════════
-       PROFILES TAB
-    ════════════════════════════════════ */
-    .acc-profiles-body { padding: 14px; display: flex; flex-direction: column; gap: 10px; flex: 1; }
-    .acc-profiles-intro { font-size: .78rem; color: var(--acc-muted); line-height: 1.6; padding: 10px 12px; background: rgba(79,142,247,.06); border: 1px solid rgba(79,142,247,.15); border-radius: 10px; }
-    .acc-profile-card {
-      background: var(--acc-surface); border: 1px solid var(--acc-border);
-      border-radius: 12px; padding: 14px; cursor: pointer;
-      transition: border-color .2s, background .2s, transform .15s;
-      display: flex; align-items: center; gap: 12px;
-      user-select: none;
-    }
-    .acc-profile-card:hover { border-color: rgba(79,142,247,.4); background: #0f2a50; transform: translateY(-1px); }
-    .acc-profile-card.acc-profile-active { border-color: var(--acc-accent2); background: rgba(56,217,169,.07); }
-    .acc-profile-card:focus-visible { outline: 2px solid var(--acc-accent); outline-offset: 2px; }
-    .acc-profile-icon { font-size: 1.8rem; width: 44px; height: 44px; border-radius: 10px; background: rgba(79,142,247,.08); border: 1px solid rgba(79,142,247,.15); display: flex; align-items: center; justify-content: center; flex-shrink: 0; }
-    .acc-profile-card.acc-profile-active .acc-profile-icon { background: rgba(56,217,169,.12); border-color: rgba(56,217,169,.3); }
-    .acc-profile-info { flex: 1; }
-    .acc-profile-name { font-size: .88rem; font-weight: 700; color: var(--acc-text); margin-bottom: 3px; }
-    .acc-profile-desc { font-size: .7rem; color: var(--acc-muted); line-height: 1.5; }
-    .acc-profile-tags { display: flex; flex-wrap: wrap; gap: 4px; margin-top: 6px; }
-    .acc-profile-tag { font-size: .58rem; font-weight: 600; padding: 2px 6px; border-radius: 4px; background: rgba(79,142,247,.1); color: var(--acc-accent); text-transform: uppercase; letter-spacing: .05em; }
-    .acc-profile-check { width: 20px; height: 20px; border-radius: 50%; border: 2px solid var(--acc-border); flex-shrink: 0; display: flex; align-items: center; justify-content: center; font-size: .7rem; transition: background .2s, border-color .2s; }
-    .acc-profile-card.acc-profile-active .acc-profile-check { background: var(--acc-accent2); border-color: var(--acc-accent2); color: #fff; }
-
-    /* ── Auto-Fix Tab ── */
-    .acc-fix-body { padding: 14px; display: flex; flex-direction: column; gap: 10px; flex: 1; }
-    .acc-score-card { background: linear-gradient(135deg, #0a1628, #0d1f3c); border: 1px solid var(--acc-border); border-radius: 14px; padding: 18px; text-align: center; position: relative; overflow: hidden; }
-    .acc-score-card::before { content: ''; position: absolute; top: -40px; right: -40px; width: 120px; height: 120px; border-radius: 50%; background: radial-gradient(circle, rgba(79,142,247,.12), transparent 70%); }
-    .acc-score-ring { width: 80px; height: 80px; margin: 0 auto 10px; border-radius: 50%; background: var(--acc-surface); border: 3px solid var(--acc-border); display: flex; align-items: center; justify-content: center; position: relative; }
-    .acc-score-num { font-size: 1.8rem; font-weight: 700; color: var(--acc-text); font-family: var(--acc-mono); line-height: 1; }
-    .acc-score-label { font-size: .65rem; color: var(--acc-muted); text-transform: uppercase; letter-spacing: .1em; margin-top: 2px; }
-    .acc-score-sub { font-size: .72rem; color: var(--acc-muted); margin-top: 8px; }
-    .acc-stats { display: flex; justify-content: center; gap: 20px; margin-top: 12px; }
-    .acc-stat { text-align: center; }
-    .acc-stat-n { font-size: 1.1rem; font-weight: 700; font-family: var(--acc-mono); }
-    .acc-stat-n.g { color: var(--acc-accent2); }
-    .acc-stat-n.y { color: var(--acc-warn); }
-    .acc-stat-n.r { color: var(--acc-error); }
-    .acc-stat-l { font-size: .6rem; color: var(--acc-muted); text-transform: uppercase; letter-spacing: .06em; margin-top: 2px; }
-    .acc-scan-btn { width: 100%; padding: 12px; border-radius: 11px; border: none; background: linear-gradient(135deg, var(--acc-accent), #3a6fd8); color: #fff; font-size: .88rem; font-weight: 700; cursor: pointer; font-family: var(--acc-font); transition: opacity .15s, transform .1s; display: flex; align-items: center; justify-content: center; gap: 8px; letter-spacing: .02em; box-shadow: 0 4px 16px rgba(79,142,247,.3); }
-    .acc-scan-btn:hover { opacity: .92; }
-    .acc-scan-btn:active { transform: scale(.98); }
-    .acc-scan-btn:disabled { background: var(--acc-surface); color: var(--acc-muted); box-shadow: none; cursor: default; }
-    .acc-scan-btn:focus-visible { outline: 2px solid #fff; outline-offset: 2px; }
-    .acc-dl-btn { width: 100%; padding: 10px; border-radius: 11px; border: 1px solid rgba(56,217,169,.3); background: rgba(56,217,169,.07); color: var(--acc-accent2); font-size: .82rem; font-weight: 600; cursor: pointer; font-family: var(--acc-font); transition: background .15s; display: flex; align-items: center; justify-content: center; gap: 7px; }
-    .acc-dl-btn:hover { background: rgba(56,217,169,.14); }
-    .acc-dl-btn:disabled { opacity: .35; cursor: default; }
-    .acc-issues { display: flex; flex-direction: column; gap: 6px; }
-    .acc-issue { background: var(--acc-surface); border-radius: 10px; padding: 10px 12px; border-left: 3px solid var(--acc-border); }
-    .acc-issue.fixed   { border-left-color: var(--acc-accent2); background: rgba(56,217,169,.05); }
-    .acc-issue.warning { border-left-color: var(--acc-warn);    background: rgba(245,166,35,.05); }
-    .acc-issue.error   { border-left-color: var(--acc-error);   background: rgba(247,95,95,.05); }
-    .acc-issue-head { display: flex; align-items: flex-start; gap: 7px; justify-content: space-between; }
-    .acc-issue-title { font-size: .82rem; font-weight: 600; color: var(--acc-text); display: flex; align-items: center; gap: 6px; }
-    .acc-badge { font-size: .6rem; font-weight: 700; padding: 2px 7px; border-radius: 6px; text-transform: uppercase; letter-spacing: .05em; flex-shrink: 0; margin-top: 1px; }
-    .acc-badge.fixed   { background: rgba(56,217,169,.15);  color: var(--acc-accent2); }
-    .acc-badge.warning { background: rgba(245,166,35,.15);  color: var(--acc-warn); }
-    .acc-badge.error   { background: rgba(247,95,95,.15);   color: var(--acc-error); }
-    .acc-issue-desc { font-size: .75rem; color: var(--acc-muted); margin-top: 5px; line-height: 1.55; }
-    .acc-issue-cnt  { font-size: .68rem; font-family: var(--acc-mono); color: #4a6a9b; margin-top: 4px; }
-
-    /* ── History Tab ── */
-    .acc-hist-body { padding: 14px; display: flex; flex-direction: column; gap: 8px; flex: 1; }
-    .acc-hist-empty { text-align: center; color: var(--acc-muted); font-size: .83rem; padding: 30px 0; line-height: 1.7; }
-    .acc-hist-card { background: var(--acc-surface); border: 1px solid var(--acc-border); border-radius: 10px; padding: 11px 13px; }
-    .acc-hist-top { display: flex; justify-content: space-between; align-items: center; margin-bottom: 5px; }
-    .acc-hist-date { font-size: .7rem; color: var(--acc-muted); font-family: var(--acc-mono); }
-    .acc-hist-score { font-size: .88rem; font-weight: 700; font-family: var(--acc-mono); color: var(--acc-accent); }
-    .acc-hist-pills { display: flex; gap: 6px; flex-wrap: wrap; }
-    .acc-hist-pill { font-size: .65rem; padding: 2px 8px; border-radius: 6px; font-weight: 600; }
-    .acc-hist-pill.g { background: rgba(56,217,169,.12); color: var(--acc-accent2); }
-    .acc-hist-pill.y { background: rgba(245,166,35,.12);  color: var(--acc-warn); }
-    .acc-hist-pill.r { background: rgba(247,95,95,.12);   color: var(--acc-error); }
-    .acc-hist-dl { margin-top: 8px; width: 100%; padding: 6px; border-radius: 7px; border: 1px solid var(--acc-border); background: transparent; color: var(--acc-muted); font-size: .72rem; cursor: pointer; font-family: var(--acc-font); transition: border-color .15s, color .15s; }
-    .acc-hist-dl:hover { border-color: var(--acc-accent2); color: var(--acc-accent2); }
-
-    /* ── Footer ── */
-    .acc-footer { padding: 9px 16px; border-top: 1px solid #dce6f8; font-size: .65rem; color: #5a6e8c; text-align: center; display: flex; align-items: center; justify-content: center; gap: 6px; flex-shrink: 0; background: #f8f9fe; }
-    .acc-footer img { width: 14px; height: 14px; object-fit: contain; opacity: .5; }
-
-    /* ── Reading guide ── */
-    #acc-reading-line { position: fixed; left: 0; right: 0; height: 34px; background: rgba(79,142,247,.1); border-top: 2px solid rgba(79,142,247,.4); border-bottom: 2px solid rgba(79,142,247,.4); pointer-events: none; z-index: 2147483644; display: none; top: 0; }
-
-    /* ── Reading mask ── */
-    #acc-reading-mask-top    { position: fixed; left:0; right:0; top:0; background: rgba(0,0,0,.75); pointer-events: none; z-index: 2147483643; display: none; }
-    #acc-reading-mask-bottom { position: fixed; left:0; right:0; bottom:0; background: rgba(0,0,0,.75); pointer-events: none; z-index: 2147483643; display: none; }
-
-    /* ── Accessibility effect classes ── */
-    body.acc-big-cursor, body.acc-big-cursor * { cursor: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='44' height='44'%3E%3Ccircle cx='11' cy='11' r='10' fill='%230a1628' stroke='%234f8ef7' stroke-width='2.5'/%3E%3C/svg%3E") 11 11, auto !important; }
-    body.acc-highlight-links a { outline: 2px solid var(--acc-warn) !important; outline-offset: 2px !important; background: rgba(245,166,35,.08) !important; }
-    body.acc-highlight-headings h1, body.acc-highlight-headings h2, body.acc-highlight-headings h3, body.acc-highlight-headings h4, body.acc-highlight-headings h5, body.acc-highlight-headings h6 { outline: 2px solid rgba(79,142,247,.6) !important; outline-offset: 3px !important; background: rgba(79,142,247,.05) !important; }
-    body.acc-highlight-hover *:hover { outline: 2px solid var(--acc-accent2) !important; outline-offset: 2px !important; }
-    body.acc-readable,  body.acc-readable  * { font-family: Georgia, 'Times New Roman', serif !important; letter-spacing: .03em !important; }
-    body.acc-dyslexia,  body.acc-dyslexia  * { font-family: 'Trebuchet MS', Verdana, sans-serif !important; line-height: 2 !important; letter-spacing: .09em !important; word-spacing: .22em !important; }
-    /* Filters applied to html, not body — body-level filters break position:fixed */
-    html.acc-high-contrast   { filter: contrast(180%) !important; }
-    html.acc-invert          { filter: invert(1) hue-rotate(180deg) !important; }
-    html.acc-grayscale       { filter: grayscale(1) !important; }
-    html.acc-low-saturation  { filter: saturate(0.2) !important; }
-    body.acc-stop-anim *, body.acc-stop-anim *::before, body.acc-stop-anim *::after { animation: none !important; transition: none !important; }
-    body.acc-focus-ring *:focus { outline: 3px solid var(--acc-accent) !important; outline-offset: 3px !important; }
-    body.acc-text-spacing, body.acc-text-spacing * { line-height: 1.95 !important; letter-spacing: .13em !important; word-spacing: .15em !important; }
-    body.acc-big-targets a:not(#acc-widget-root a), body.acc-big-targets button:not(#acc-widget-root button) { min-height: 44px !important; min-width: 44px !important; display: inline-flex !important; align-items: center !important; }
-    body.acc-reduced-stimulus { background: #f5f0e8 !important; color: #2a2a2a !important; }
-    html.acc-reduced-stimulus { filter: saturate(0.6) brightness(1.05) !important; }
-    body.acc-text-align-left  * { text-align: left  !important; }
-    body.acc-text-align-center * { text-align: center !important; }
-    body.acc-text-align-right  * { text-align: right  !important; }
-    body.acc-keyboard-nav *:focus { outline: 4px solid #ffeb3b !important; outline-offset: 4px !important; box-shadow: 0 0 0 8px rgba(255,235,59,.2) !important; }
-
-    /* ── Status announcer (screen readers) ── */
-    #acc-status { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0,0,0,0); white-space: nowrap; }
-
-    /* ══════════════════════════════════════════
-       MOBILE RESPONSIVE
-    ══════════════════════════════════════════ */
-    @media (max-width: 480px) {
-      #acc-toggle { width: 54px; height: 54px; border-radius: 14px; bottom: 16px; right: 16px; }
-      #acc-toggle img { width: 30px; height: 30px; }
-      #acc-toggle-label { display: none; }
-      #acc-panel { position: fixed !important; bottom: 0 !important; top: auto !important; left: 0 !important; right: 0 !important; width: 100% !important; max-width: 100% !important; max-height: 88vh !important; border-radius: 20px 20px 0 0 !important; transform: translateY(110%) !important; opacity: 1 !important; }
-      #acc-panel.acc-open { transform: translateY(0) !important; }
-      .acc-tab { font-size: .6rem; padding: 8px 2px; }
-      .acc-body, .acc-fix-body, .acc-hist-body, .acc-profiles-body { padding: 10px; gap: 6px; }
-      .acc-stepper, .acc-row { padding: 8px 10px; }
-      .acc-row-label { font-size: .78rem; }
-      .acc-profile-card { padding: 10px; }
-      .acc-profile-icon { width: 36px; height: 36px; font-size: 1.4rem; }
-    }
-
-    @media (prefers-reduced-motion: reduce) {
-      #acc-panel { transition: none !important; }
-      #acc-toggle { transition: none !important; }
-    }
+:root{--acc-dark:#ffffff;--acc-panel:#ffffff;--acc-surface:#f0f4ff;--acc-border:#dce6f8;--acc-accent:#4f8ef7;--acc-accent2:#38d9a9;--acc-warn:#f5a623;--acc-error:#e53e3e;--acc-text:#0a1628;--acc-muted:#5a6e8c;--acc-font:'Sora',sans-serif;--acc-mono:'JetBrains Mono',monospace}#acc-toggle{position:fixed;bottom:24px;right:24px;width:62px;height:62px;border-radius:16px;background:#ffffff;border:2px solid #4f8ef7;cursor:pointer;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:3px;box-shadow:0 4px 20px rgba(79,142,247,.3),0 2px 8px rgba(0,0,0,.12);z-index:2147483646;padding:0;outline:none;transition:transform .2s,box-shadow .3s,border-color .2s}#acc-toggle:hover{transform:translateY(-2px);box-shadow:0 8px 28px rgba(79,142,247,.4),0 2px 8px rgba(0,0,0,.15);border-color:#3a6fd8}#acc-toggle:focus-visible{outline:3px solid var(--acc-accent) !important;outline-offset:3px !important}#acc-toggle img{width:36px;height:36px;object-fit:contain}#acc-toggle-label{display:none}#acc-panel{position:fixed;bottom:100px;right:24px;width:min(400px,calc(100vw - 48px));max-height:86vh;background:#ffffff;border:1px solid #dce6f8;border-radius:20px;box-shadow:0 8px 40px rgba(10,22,40,.15),0 2px 12px rgba(79,142,247,.1);z-index:2147483645;overflow:hidden;display:flex;flex-direction:column;transform:scale(.92) translateY(16px);opacity:0;pointer-events:none;transition:transform .3s cubic-bezier(.34,1.56,.64,1),opacity .2s;font-family:var(--acc-font);box-sizing:border-box}#acc-panel.acc-open{transform:scale(1) translateY(0);opacity:1;pointer-events:all}#acc-panel.acc-instant{transition:none !important}#acc-panel *{box-sizing:border-box;margin:0;padding:0}body.acc-in-iframe{overflow:hidden}body.acc-in-iframe #acc-toggle{position:absolute !important;bottom:10px !important;right:10px !important}body.acc-in-iframe #acc-panel{position:absolute !important;overflow-y:auto !important}.acc-header{background:linear-gradient(135deg,#0a1628 0%,#0d1f3c 100%);border-bottom:1px solid var(--acc-border);padding:16px 18px 0;flex-shrink:0}.acc-header-top{display:flex;align-items:center;gap:10px;margin-bottom:14px}.acc-header-logo{width:32px;height:32px;object-fit:contain;filter:brightness(1.15) drop-shadow(0 0 6px rgba(79,142,247,.3))}.acc-header-title{flex:1}.acc-header-title h2{font-size:.9rem;font-weight:700;color:#ffffff;letter-spacing:.05em;text-transform:uppercase}.acc-header-title p{font-size:.7rem;color:rgba(255,255,255,.65);margin-top:1px}.acc-close-btn{width:28px;height:28px;border-radius:8px;border:1px solid rgba(255,255,255,.2);background:rgba(255,255,255,.12);color:rgba(255,255,255,.8);cursor:pointer;display:flex;align-items:center;justify-content:center;font-size:14px;transition:background .15s,color .15s}.acc-close-btn:hover{background:rgba(255,255,255,.22);color:#ffffff}.acc-close-btn:focus-visible{outline:2px solid var(--acc-accent);outline-offset:2px}.acc-lang-wrap{position:relative}.acc-lang-btn{display:flex;align-items:center;gap:5px;padding:4px 10px 4px 8px;background:rgba(255,255,255,.12);border:1px solid rgba(255,255,255,.2);border-radius:20px;color:rgba(255,255,255,.85);cursor:pointer;font-family:var(--acc-font);font-size:.68rem;font-weight:700;white-space:nowrap;transition:background .15s,border-color .15s,color .15s;letter-spacing:.04em}.acc-lang-btn:hover{background:rgba(255,255,255,.22);border-color:rgba(255,255,255,.4);color:#ffffff}.acc-lang-btn:focus-visible{outline:2px solid rgba(255,255,255,.6);outline-offset:2px}.acc-lang-btn.acc-lang-active{background:rgba(79,142,247,.35);border-color:#4f8ef7;color:#ffffff}.acc-lang-globe{font-size:13px;line-height:1}.acc-lang-label{letter-spacing:.05em}.acc-lang-dropdown{position:absolute;top:34px;right:0;background:#ffffff;border:1px solid #dce6f8;border-radius:12px;min-width:224px;max-height:280px;overflow-y:auto;z-index:9999;display:none;box-shadow:0 8px 32px rgba(10,22,40,.12),0 2px 8px rgba(79,142,247,.08);scrollbar-width:thin;scrollbar-color:#dce6f8 transparent}.acc-lang-dropdown.acc-lang-open{display:block}.acc-lang-dropdown::-webkit-scrollbar{width:4px}.acc-lang-dropdown::-webkit-scrollbar-thumb{background:var(--acc-border);border-radius:4px}.acc-lang-search{width:100%;padding:9px 12px;background:#f8f9fe;border:none;border-bottom:1px solid #dce6f8;color:#0a1628;font-family:var(--acc-font);font-size:.78rem;outline:none;border-radius:12px 12px 0 0}.acc-lang-search::placeholder{color:#8a9bbf}.acc-lang-option{display:flex;align-items:center;gap:8px;padding:8px 12px;font-size:.78rem;color:#5a6e8c;cursor:pointer;transition:background .12s;border:none;background:none;width:100%;text-align:left;font-family:var(--acc-font)}.acc-lang-option:hover{background:#f0f4ff;color:#0a1628}.acc-lang-option.acc-lang-selected{color:#4f8ef7;background:#f0f4ff;font-weight:600}.acc-lang-option .acc-lang-native{font-size:.68rem;color:#8a9bbf;margin-left:auto;flex-shrink:0}.acc-active-profile-badge{display:none;align-items:center;gap:6px;background:rgba(56,217,169,.12);border:1px solid rgba(56,217,169,.3);border-radius:6px;padding:4px 10px;margin-bottom:10px;font-size:.68rem;font-weight:600;color:var(--acc-accent2)}.acc-active-profile-badge.visible{display:flex}.acc-active-profile-badge button{background:none;border:none;color:var(--acc-muted);cursor:pointer;font-size:.7rem;margin-left:auto;padding:0 2px;transition:color .15s}.acc-active-profile-badge button:hover{color:var(--acc-error)}.acc-tabs{display:flex;gap:1px;padding-bottom:0;overflow-x:auto;scrollbar-width:none;border-top:1px solid #dce6f8;margin-top:12px;background:#f8f9fe}.acc-tabs::-webkit-scrollbar{display:none}.acc-tab{flex:1;padding:9px 4px;font-size:.65rem;font-weight:600;color:var(--acc-muted);cursor:pointer;border:none;background:none;letter-spacing:.03em;text-transform:uppercase;border-bottom:2px solid transparent;transition:color .15s,border-color .15s;font-family:var(--acc-font);white-space:nowrap}.acc-tab.acc-active{color:var(--acc-accent);border-bottom-color:var(--acc-accent)}.acc-tab:focus-visible{outline:2px solid var(--acc-accent);outline-offset:-2px}.acc-panel-content{display:none;flex:1;overflow-y:auto;flex-direction:column}.acc-panel-content.acc-active{display:flex}.acc-panel-content::-webkit-scrollbar{width:4px}.acc-panel-content::-webkit-scrollbar-track{background:transparent}.acc-panel-content::-webkit-scrollbar-thumb{background:var(--acc-border);border-radius:4px}.acc-body{padding:14px;display:flex;flex-direction:column;gap:7px;flex:1}.acc-section{font-size:.63rem;font-weight:600;letter-spacing:.12em;text-transform:uppercase;color:#4f8ef7;margin:6px 0 2px;font-family:var(--acc-mono);display:flex;align-items:center;gap:6px}.acc-section::after{content:'';flex:1;height:1px;background:#dce6f8}.acc-row{display:flex;align-items:center;justify-content:space-between;background:#f8f9fe;border:1px solid #dce6f8;border-radius:10px;padding:10px 12px;cursor:pointer;transition:background .15s,border-color .15s;user-select:none}.acc-row:hover{background:#0f2a50;border-color:#1a3a6b}.acc-row.acc-on{background:rgba(79,142,247,.08);border-color:rgba(79,142,247,.35)}.acc-row:focus-visible{outline:2px solid var(--acc-accent);outline-offset:2px}.acc-row-label{display:flex;align-items:center;gap:9px;font-size:.83rem;font-weight:500;color:#0a1628}.acc-row-icon{font-size:1.1rem;line-height:1;width:22px;text-align:center}.acc-row-sub{font-size:.68rem;color:#5a6e8c;margin-top:1px}.acc-switch{width:36px;height:20px;background:var(--acc-border);border-radius:99px;position:relative;transition:background .2s;flex-shrink:0}.acc-switch::after{content:'';position:absolute;top:2px;left:2px;width:16px;height:16px;background:#fff;border-radius:50%;transition:transform .2s;box-shadow:0 1px 4px rgba(0,0,0,.3)}.acc-row.acc-on .acc-switch{background:var(--acc-accent)}.acc-row.acc-on .acc-switch::after{transform:translateX(16px)}.acc-stepper{display:flex;align-items:center;justify-content:space-between;background:var(--acc-surface);border:1px solid var(--acc-border);border-radius:10px;padding:9px 12px}.acc-stepper-label{font-size:.83rem;font-weight:500;color:var(--acc-text);display:flex;align-items:center;gap:9px}.acc-stepper-ctrl{display:flex;align-items:center;gap:8px}.acc-step-btn{width:26px;height:26px;border-radius:7px;border:1px solid var(--acc-border);background:var(--acc-dark);color:var(--acc-text);font-size:1rem;cursor:pointer;display:flex;align-items:center;justify-content:center;transition:background .15s;font-weight:700;line-height:1;padding:0;font-family:inherit}.acc-step-btn:hover{background:var(--acc-border)}.acc-step-btn:focus-visible{outline:2px solid var(--acc-accent)}.acc-step-val{font-size:.8rem;font-family:var(--acc-mono);min-width:42px;text-align:center;color:var(--acc-accent);font-weight:500}.acc-select-row{background:var(--acc-surface);border:1px solid var(--acc-border);border-radius:10px;padding:9px 12px;display:flex;align-items:center;justify-content:space-between;gap:10px}.acc-select-row select{background:var(--acc-dark);border:1px solid var(--acc-border);border-radius:6px;color:var(--acc-accent);font-family:var(--acc-mono);font-size:.78rem;padding:4px 8px;outline:none;cursor:pointer}.acc-select-row select:focus{border-color:var(--acc-accent)}.acc-align-row{background:var(--acc-surface);border:1px solid var(--acc-border);border-radius:10px;padding:9px 12px;display:flex;align-items:center;justify-content:space-between;gap:10px}.acc-align-btns{display:flex;gap:4px}.acc-align-btn{width:30px;height:26px;border-radius:6px;border:1px solid var(--acc-border);background:var(--acc-dark);color:var(--acc-muted);font-size:.85rem;cursor:pointer;display:flex;align-items:center;justify-content:center;transition:background .15s,border-color .15s,color .15s;padding:0}.acc-align-btn:hover{background:var(--acc-border)}.acc-align-btn.acc-active-align{background:rgba(79,142,247,.15);border-color:var(--acc-accent);color:var(--acc-accent)}.acc-colors-box{background:var(--acc-surface);border:1px solid var(--acc-border);border-radius:10px;padding:11px 12px}.acc-colors-label{font-size:.83rem;font-weight:500;color:var(--acc-text);margin-bottom:9px;display:flex;align-items:center;gap:8px}.acc-swatches{display:flex;gap:7px;flex-wrap:wrap}.acc-swatch{width:30px;height:30px;border-radius:8px;border:2px solid transparent;cursor:pointer;transition:transform .15s,border-color .15s,box-shadow .15s;outline:none;padding:0;font-size:.6rem;display:flex;align-items:center;justify-content:center;font-weight:700}.acc-swatch:hover{transform:scale(1.1)}.acc-swatch:focus-visible{outline:2px solid var(--acc-accent)}.acc-swatch.acc-picked{border-color:var(--acc-accent) !important;box-shadow:0 0 0 3px rgba(79,142,247,.25);transform:scale(1.1)}.acc-reset{width:100%;padding:10px;border-radius:10px;margin-top:2px;border:1px solid rgba(247,95,95,.3);background:rgba(247,95,95,.08);color:var(--acc-error);font-size:.82rem;font-weight:600;cursor:pointer;font-family:var(--acc-font);transition:background .15s}.acc-reset:hover{background:rgba(247,95,95,.15)}.acc-reset:focus-visible{outline:2px solid var(--acc-error)}.acc-profiles-body{padding:14px;display:flex;flex-direction:column;gap:10px;flex:1}.acc-profiles-intro{font-size:.78rem;color:var(--acc-muted);line-height:1.6;padding:10px 12px;background:rgba(79,142,247,.06);border:1px solid rgba(79,142,247,.15);border-radius:10px}.acc-profile-card{background:var(--acc-surface);border:1px solid var(--acc-border);border-radius:12px;padding:14px;cursor:pointer;transition:border-color .2s,background .2s,transform .15s;display:flex;align-items:center;gap:12px;user-select:none}.acc-profile-card:hover{border-color:rgba(79,142,247,.4);background:#0f2a50;transform:translateY(-1px)}.acc-profile-card.acc-profile-active{border-color:var(--acc-accent2);background:rgba(56,217,169,.07)}.acc-profile-card:focus-visible{outline:2px solid var(--acc-accent);outline-offset:2px}.acc-profile-icon{font-size:1.8rem;width:44px;height:44px;border-radius:10px;background:rgba(79,142,247,.08);border:1px solid rgba(79,142,247,.15);display:flex;align-items:center;justify-content:center;flex-shrink:0}.acc-profile-card.acc-profile-active .acc-profile-icon{background:rgba(56,217,169,.12);border-color:rgba(56,217,169,.3)}.acc-profile-info{flex:1}.acc-profile-name{font-size:.88rem;font-weight:700;color:var(--acc-text);margin-bottom:3px}.acc-profile-desc{font-size:.7rem;color:var(--acc-muted);line-height:1.5}.acc-profile-tags{display:flex;flex-wrap:wrap;gap:4px;margin-top:6px}.acc-profile-tag{font-size:.58rem;font-weight:600;padding:2px 6px;border-radius:4px;background:rgba(79,142,247,.1);color:var(--acc-accent);text-transform:uppercase;letter-spacing:.05em}.acc-profile-check{width:20px;height:20px;border-radius:50%;border:2px solid var(--acc-border);flex-shrink:0;display:flex;align-items:center;justify-content:center;font-size:.7rem;transition:background .2s,border-color .2s}.acc-profile-card.acc-profile-active .acc-profile-check{background:var(--acc-accent2);border-color:var(--acc-accent2);color:#fff}.acc-fix-body{padding:14px;display:flex;flex-direction:column;gap:10px;flex:1}.acc-score-card{background:linear-gradient(135deg,#0a1628,#0d1f3c);border:1px solid var(--acc-border);border-radius:14px;padding:18px;text-align:center;position:relative;overflow:hidden}.acc-score-card::before{content:'';position:absolute;top:-40px;right:-40px;width:120px;height:120px;border-radius:50%;background:radial-gradient(circle,rgba(79,142,247,.12),transparent 70%)}.acc-score-ring{width:80px;height:80px;margin:0 auto 10px;border-radius:50%;background:var(--acc-surface);border:3px solid var(--acc-border);display:flex;align-items:center;justify-content:center;position:relative}.acc-score-num{font-size:1.8rem;font-weight:700;color:var(--acc-text);font-family:var(--acc-mono);line-height:1}.acc-score-label{font-size:.65rem;color:var(--acc-muted);text-transform:uppercase;letter-spacing:.1em;margin-top:2px}.acc-score-sub{font-size:.72rem;color:var(--acc-muted);margin-top:8px}.acc-stats{display:flex;justify-content:center;gap:20px;margin-top:12px}.acc-stat{text-align:center}.acc-stat-n{font-size:1.1rem;font-weight:700;font-family:var(--acc-mono)}.acc-stat-n.g{color:var(--acc-accent2)}.acc-stat-n.y{color:var(--acc-warn)}.acc-stat-n.r{color:var(--acc-error)}.acc-stat-l{font-size:.6rem;color:var(--acc-muted);text-transform:uppercase;letter-spacing:.06em;margin-top:2px}.acc-scan-btn{width:100%;padding:12px;border-radius:11px;border:none;background:linear-gradient(135deg,var(--acc-accent),#3a6fd8);color:#fff;font-size:.88rem;font-weight:700;cursor:pointer;font-family:var(--acc-font);transition:opacity .15s,transform .1s;display:flex;align-items:center;justify-content:center;gap:8px;letter-spacing:.02em;box-shadow:0 4px 16px rgba(79,142,247,.3)}.acc-scan-btn:hover{opacity:.92}.acc-scan-btn:active{transform:scale(.98)}.acc-scan-btn:disabled{background:var(--acc-surface);color:var(--acc-muted);box-shadow:none;cursor:default}.acc-scan-btn:focus-visible{outline:2px solid #fff;outline-offset:2px}.acc-dl-btn{width:100%;padding:10px;border-radius:11px;border:1px solid rgba(56,217,169,.3);background:rgba(56,217,169,.07);color:var(--acc-accent2);font-size:.82rem;font-weight:600;cursor:pointer;font-family:var(--acc-font);transition:background .15s;display:flex;align-items:center;justify-content:center;gap:7px}.acc-dl-btn:hover{background:rgba(56,217,169,.14)}.acc-dl-btn:disabled{opacity:.35;cursor:default}.acc-issues{display:flex;flex-direction:column;gap:6px}.acc-issue{background:var(--acc-surface);border-radius:10px;padding:10px 12px;border-left:3px solid var(--acc-border)}.acc-issue.fixed{border-left-color:var(--acc-accent2);background:rgba(56,217,169,.05)}.acc-issue.warning{border-left-color:var(--acc-warn);background:rgba(245,166,35,.05)}.acc-issue.error{border-left-color:var(--acc-error);background:rgba(247,95,95,.05)}.acc-issue-head{display:flex;align-items:flex-start;gap:7px;justify-content:space-between}.acc-issue-title{font-size:.82rem;font-weight:600;color:var(--acc-text);display:flex;align-items:center;gap:6px}.acc-badge{font-size:.6rem;font-weight:700;padding:2px 7px;border-radius:6px;text-transform:uppercase;letter-spacing:.05em;flex-shrink:0;margin-top:1px}.acc-badge.fixed{background:rgba(56,217,169,.15);color:var(--acc-accent2)}.acc-badge.warning{background:rgba(245,166,35,.15);color:var(--acc-warn)}.acc-badge.error{background:rgba(247,95,95,.15);color:var(--acc-error)}.acc-issue-desc{font-size:.75rem;color:var(--acc-muted);margin-top:5px;line-height:1.55}.acc-issue-cnt{font-size:.68rem;font-family:var(--acc-mono);color:#4a6a9b;margin-top:4px}.acc-hist-body{padding:14px;display:flex;flex-direction:column;gap:8px;flex:1}.acc-hist-empty{text-align:center;color:var(--acc-muted);font-size:.83rem;padding:30px 0;line-height:1.7}.acc-hist-card{background:var(--acc-surface);border:1px solid var(--acc-border);border-radius:10px;padding:11px 13px}.acc-hist-top{display:flex;justify-content:space-between;align-items:center;margin-bottom:5px}.acc-hist-date{font-size:.7rem;color:var(--acc-muted);font-family:var(--acc-mono)}.acc-hist-score{font-size:.88rem;font-weight:700;font-family:var(--acc-mono);color:var(--acc-accent)}.acc-hist-pills{display:flex;gap:6px;flex-wrap:wrap}.acc-hist-pill{font-size:.65rem;padding:2px 8px;border-radius:6px;font-weight:600}.acc-hist-pill.g{background:rgba(56,217,169,.12);color:var(--acc-accent2)}.acc-hist-pill.y{background:rgba(245,166,35,.12);color:var(--acc-warn)}.acc-hist-pill.r{background:rgba(247,95,95,.12);color:var(--acc-error)}.acc-hist-dl{margin-top:8px;width:100%;padding:6px;border-radius:7px;border:1px solid var(--acc-border);background:transparent;color:var(--acc-muted);font-size:.72rem;cursor:pointer;font-family:var(--acc-font);transition:border-color .15s,color .15s}.acc-hist-dl:hover{border-color:var(--acc-accent2);color:var(--acc-accent2)}.acc-footer{padding:9px 16px;border-top:1px solid #dce6f8;font-size:.65rem;color:#5a6e8c;text-align:center;display:flex;align-items:center;justify-content:center;gap:6px;flex-shrink:0;background:#f8f9fe}.acc-footer img{width:14px;height:14px;object-fit:contain;opacity:.5}#acc-reading-line{position:fixed;left:0;right:0;height:34px;background:rgba(79,142,247,.1);border-top:2px solid rgba(79,142,247,.4);border-bottom:2px solid rgba(79,142,247,.4);pointer-events:none;z-index:2147483644;display:none;top:0}#acc-reading-mask-top{position:fixed;left:0;right:0;top:0;background:rgba(0,0,0,.75);pointer-events:none;z-index:2147483643;display:none}#acc-reading-mask-bottom{position:fixed;left:0;right:0;bottom:0;background:rgba(0,0,0,.75);pointer-events:none;z-index:2147483643;display:none}body.acc-big-cursor,body.acc-big-cursor *{cursor:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='44' height='44'%3E%3Ccircle cx='11' cy='11' r='10' fill='%230a1628' stroke='%234f8ef7' stroke-width='2.5'/%3E%3C/svg%3E") 11 11,auto !important}body.acc-highlight-links a{outline:2px solid var(--acc-warn) !important;outline-offset:2px !important;background:rgba(245,166,35,.08) !important}body.acc-highlight-headings h1,body.acc-highlight-headings h2,body.acc-highlight-headings h3,body.acc-highlight-headings h4,body.acc-highlight-headings h5,body.acc-highlight-headings h6{outline:2px solid rgba(79,142,247,.6) !important;outline-offset:3px !important;background:rgba(79,142,247,.05) !important}body.acc-highlight-hover *:hover{outline:2px solid var(--acc-accent2) !important;outline-offset:2px !important}body.acc-readable,body.acc-readable *{font-family:Georgia,'Times New Roman',serif !important;letter-spacing:.03em !important}body.acc-dyslexia,body.acc-dyslexia *{font-family:'Trebuchet MS',Verdana,sans-serif !important;line-height:2 !important;letter-spacing:.09em !important;word-spacing:.22em !important}html.acc-high-contrast{filter:contrast(180%) !important}html.acc-invert{filter:invert(1) hue-rotate(180deg) !important}html.acc-grayscale{filter:grayscale(1) !important}html.acc-low-saturation{filter:saturate(0.2) !important}body.acc-stop-anim *,body.acc-stop-anim *::before,body.acc-stop-anim *::after{animation:none !important;transition:none !important}body.acc-focus-ring *:focus{outline:3px solid var(--acc-accent) !important;outline-offset:3px !important}body.acc-text-spacing,body.acc-text-spacing *{line-height:1.95 !important;letter-spacing:.13em !important;word-spacing:.15em !important}body.acc-big-targets a:not(#acc-widget-root a),body.acc-big-targets button:not(#acc-widget-root button){min-height:44px !important;min-width:44px !important;display:inline-flex !important;align-items:center !important}body.acc-reduced-stimulus{background:#f5f0e8 !important;color:#2a2a2a !important}html.acc-reduced-stimulus{filter:saturate(0.6) brightness(1.05) !important}body.acc-text-align-left *{text-align:left !important}body.acc-text-align-center *{text-align:center !important}body.acc-text-align-right *{text-align:right !important}body.acc-keyboard-nav *:focus{outline:4px solid #ffeb3b !important;outline-offset:4px !important;box-shadow:0 0 0 8px rgba(255,235,59,.2) !important}#acc-status{position:absolute;width:1px;height:1px;overflow:hidden;clip:rect(0,0,0,0);white-space:nowrap}@media (max-width:480px){#acc-toggle{width:54px;height:54px;border-radius:14px;bottom:16px;right:16px}#acc-toggle img{width:30px;height:30px}#acc-toggle-label{display:none}#acc-panel{position:fixed !important;bottom:0 !important;top:auto !important;left:0 !important;right:0 !important;width:100% !important;max-width:100% !important;max-height:88vh !important;border-radius:20px 20px 0 0 !important;transform:translateY(110%) !important;opacity:1 !important}#acc-panel.acc-open{transform:translateY(0) !important}.acc-tab{font-size:.6rem;padding:8px 2px}.acc-body,.acc-fix-body,.acc-hist-body,.acc-profiles-body{padding:10px;gap:6px}.acc-stepper,.acc-row{padding:8px 10px}.acc-row-label{font-size:.78rem}.acc-profile-card{padding:10px}.acc-profile-icon{width:36px;height:36px;font-size:1.4rem}}@media (prefers-reduced-motion:reduce){#acc-panel{transition:none !important}#acc-toggle{transition:none !important}}
   `;
   document.head.appendChild(style);
 
-  // ── Apply script-tag overrides immediately (before Supabase fetch) ──
   if (ACC_COLOR_OVERRIDE && /^#[0-9a-fA-F]{3,6}$/.test(ACC_COLOR_OVERRIDE)) {
     document.documentElement.style.setProperty('--acc-accent', ACC_COLOR_OVERRIDE);
   }
   if (ACC_POS_OVERRIDE) {
-    // Position is applied after DOM insertion — stored for positionFromAttr()
   }
 
-  // ══════════════════════════════════════════
-  // 2. HTML
-  // ══════════════════════════════════════════
   const root = document.createElement('div');
   root.id = 'acc-widget-root';
   root.innerHTML = `
-    <div id="acc-reading-line" role="presentation" aria-hidden="true"></div>
-    <div id="acc-reading-mask-top" aria-hidden="true"></div>
-    <div id="acc-reading-mask-bottom" aria-hidden="true"></div>
-    <div id="acc-status" aria-live="polite" aria-atomic="true" role="status"></div>
-
-    <button id="acc-toggle" aria-label="Open ACC Accessibility Panel" aria-expanded="false" aria-haspopup="dialog">
-      <img src="${ACC_LOGO}" alt="" aria-hidden="true" />
-      <span id="acc-toggle-label" aria-hidden="true">A11Y</span>
-    </button>
-
-    <div id="acc-panel" role="dialog" aria-modal="true" aria-label="ACC Accessibility Settings">
-      <div class="acc-header">
-        <div class="acc-header-top">
-          <img class="acc-header-logo" src="${ACC_LOGO}" alt="" aria-hidden="true" />
-          <div class="acc-header-title">
-            <h2>ACC Accessibility</h2>
-            <p>Powered by Auto AI Engine</p>
-          </div>
-          <div class="acc-lang-wrap" id="acc-lang-wrap" style="position:relative">
-            <button class="acc-lang-btn" id="acc-lang-btn"
-              aria-label="Select language" aria-expanded="false" aria-haspopup="listbox">
-              <span class="acc-lang-globe" aria-hidden="true">&#127760;</span>
-              <span class="acc-lang-label" id="acc-lang-current">EN</span>
-            </button>
-            <div class="acc-lang-dropdown" id="acc-lang-dropdown" role="listbox" aria-label="Select language">
-              <input class="acc-lang-search" type="text" id="acc-lang-search"
-                placeholder="Search language…" aria-label="Search languages" autocomplete="off" />
-              <div id="acc-lang-list"></div>
-            </div>
-          </div>
-          <button class="acc-close-btn" id="acc-close" aria-label="Close accessibility panel">✕</button>
-        </div>
-        <div class="acc-active-profile-badge" id="acc-active-badge" aria-live="polite">
-          <span id="acc-active-badge-text"></span>
-          <button id="acc-clear-profile" aria-label="Clear active profile">✕ Clear</button>
-        </div>
-        <div class="acc-tabs" role="tablist" aria-label="Accessibility settings sections">
-          <button class="acc-tab acc-active" data-tab="profiles" role="tab" aria-selected="true"  aria-controls="panel-profiles" id="tab-profiles">👤 Profiles</button>
-          <button class="acc-tab"            data-tab="settings" role="tab" aria-selected="false" aria-controls="panel-settings" id="tab-settings">⚙ Settings</button>
-          <button class="acc-tab"            data-tab="feedback" role="tab" aria-selected="false" aria-controls="panel-feedback-tab" id="tab-feedback">💬 Feedback</button>
-          <!-- Scan and History tabs hidden from end users — data still collected in background -->
-          <button class="acc-tab" data-tab="autofix"  role="tab" aria-selected="false" aria-controls="panel-autofix"  id="tab-autofix"  style="display:none">🔍 Scan</button>
-          <button class="acc-tab" data-tab="history"  role="tab" aria-selected="false" aria-controls="panel-history"  id="tab-history"  style="display:none">🕑 History</button>
-        </div>
-      </div>
-
-      <!-- ═══ PROFILES TAB ═══ -->
-      <div class="acc-panel-content acc-active" data-panel="profiles" id="panel-profiles" role="tabpanel" aria-labelledby="tab-profiles" tabindex="0">
-        <div class="acc-profiles-body">
-          <div class="acc-profiles-intro">
-            Select a profile to instantly apply accessibility settings tailored for a specific need. You can then fine-tune individual settings in the Settings tab.
-          </div>
-
-          <div class="acc-profile-card" data-profile="visually-impaired" role="button" tabindex="0" aria-pressed="false" aria-label="Visually Impaired profile">
-            <div class="acc-profile-icon" aria-hidden="true">👁</div>
-            <div class="acc-profile-info">
-              <div class="acc-profile-name">Visually Impaired</div>
-              <div class="acc-profile-desc">Larger text, high contrast, enhanced focus indicators</div>
-              <div class="acc-profile-tags">
-                <span class="acc-profile-tag">Large Text</span>
-                <span class="acc-profile-tag">High Contrast</span>
-                <span class="acc-profile-tag">Focus Ring</span>
-              </div>
-            </div>
-            <div class="acc-profile-check" aria-hidden="true"></div>
-          </div>
-
-          <div class="acc-profile-card" data-profile="cognitive" role="button" tabindex="0" aria-pressed="false" aria-label="Cognitive and Learning profile">
-            <div class="acc-profile-icon" aria-hidden="true">🧠</div>
-            <div class="acc-profile-info">
-              <div class="acc-profile-name">Cognitive / Learning</div>
-              <div class="acc-profile-desc">Dyslexia font, extra spacing, no animations, reading guide</div>
-              <div class="acc-profile-tags">
-                <span class="acc-profile-tag">Dyslexia Font</span>
-                <span class="acc-profile-tag">Text Spacing</span>
-                <span class="acc-profile-tag">No Animations</span>
-              </div>
-            </div>
-            <div class="acc-profile-check" aria-hidden="true"></div>
-          </div>
-
-          <div class="acc-profile-card" data-profile="motor" role="button" tabindex="0" aria-pressed="false" aria-label="Motor and Physical Impaired profile">
-            <div class="acc-profile-icon" aria-hidden="true">🖱</div>
-            <div class="acc-profile-info">
-              <div class="acc-profile-name">Motor / Physical</div>
-              <div class="acc-profile-desc">Large cursor, bigger click targets, keyboard navigation</div>
-              <div class="acc-profile-tags">
-                <span class="acc-profile-tag">Large Cursor</span>
-                <span class="acc-profile-tag">Big Targets</span>
-                <span class="acc-profile-tag">Keyboard Nav</span>
-              </div>
-            </div>
-            <div class="acc-profile-check" aria-hidden="true"></div>
-          </div>
-
-          <div class="acc-profile-card" data-profile="deaf" role="button" tabindex="0" aria-pressed="false" aria-label="Deaf and Hard of Hearing profile">
-            <div class="acc-profile-icon" aria-hidden="true">🔇</div>
-            <div class="acc-profile-info">
-              <div class="acc-profile-name">Deaf / Hard of Hearing</div>
-              <div class="acc-profile-desc">Highlighted links, muted media, visual cues emphasized</div>
-              <div class="acc-profile-tags">
-                <span class="acc-profile-tag">Highlight Links</span>
-                <span class="acc-profile-tag">Mute Media</span>
-                <span class="acc-profile-tag">Visual Cues</span>
-              </div>
-            </div>
-            <div class="acc-profile-check" aria-hidden="true"></div>
-          </div>
-
-          <div class="acc-profile-card" data-profile="adhd" role="button" tabindex="0" aria-pressed="false" aria-label="ADHD Friendly profile">
-            <div class="acc-profile-icon" aria-hidden="true">⚡</div>
-            <div class="acc-profile-info">
-              <div class="acc-profile-name">ADHD Friendly</div>
-              <div class="acc-profile-desc">Reduced visual stimulus, no animations, readable font</div>
-              <div class="acc-profile-tags">
-                <span class="acc-profile-tag">Reduced Stimulus</span>
-                <span class="acc-profile-tag">No Animations</span>
-                <span class="acc-profile-tag">Readable Font</span>
-              </div>
-            </div>
-            <div class="acc-profile-check" aria-hidden="true"></div>
-          </div>
-
-          <div class="acc-profile-card" data-profile="senior" role="button" tabindex="0" aria-pressed="false" aria-label="Senior Friendly profile">
-            <div class="acc-profile-icon" aria-hidden="true">👴</div>
-            <div class="acc-profile-info">
-              <div class="acc-profile-name">Senior Friendly</div>
-              <div class="acc-profile-desc">Bigger text, larger cursor, high contrast, generous spacing</div>
-              <div class="acc-profile-tags">
-                <span class="acc-profile-tag">Large Text</span>
-                <span class="acc-profile-tag">Large Cursor</span>
-                <span class="acc-profile-tag">High Contrast</span>
-              </div>
-            </div>
-            <div class="acc-profile-check" aria-hidden="true"></div>
-          </div>
-
-        </div>
-      </div>
-
-      <!-- ═══ SETTINGS TAB ═══ -->
-      <div class="acc-panel-content" data-panel="settings" id="panel-settings" role="tabpanel" aria-labelledby="tab-settings" tabindex="0">
-        <div class="acc-body">
-
-          <div class="acc-section">Content</div>
-
-          <div class="acc-stepper">
-            <div class="acc-stepper-label"><span class="acc-row-icon" aria-hidden="true">🔤</span> Font Size</div>
-            <div class="acc-stepper-ctrl">
-              <button class="acc-step-btn" id="acc-fs-dn" aria-label="Decrease font size">−</button>
-              <span class="acc-step-val" id="acc-fs-val" aria-live="polite" aria-label="Font size value">100%</span>
-              <button class="acc-step-btn" id="acc-fs-up" aria-label="Increase font size">+</button>
-            </div>
-          </div>
-
-          <div class="acc-stepper">
-            <div class="acc-stepper-label"><span class="acc-row-icon" aria-hidden="true">↕</span> Line Height</div>
-            <div class="acc-stepper-ctrl">
-              <button class="acc-step-btn" id="acc-lh-dn" aria-label="Decrease line height">−</button>
-              <span class="acc-step-val" id="acc-lh-val" aria-live="polite" aria-label="Line height value">1.6</span>
-              <button class="acc-step-btn" id="acc-lh-up" aria-label="Increase line height">+</button>
-            </div>
-          </div>
-
-          <div class="acc-stepper">
-            <div class="acc-stepper-label"><span class="acc-row-icon" aria-hidden="true">↔</span> Letter Spacing</div>
-            <div class="acc-stepper-ctrl">
-              <button class="acc-step-btn" id="acc-ls-dn" aria-label="Decrease letter spacing">−</button>
-              <span class="acc-step-val" id="acc-ls-val" aria-live="polite" aria-label="Letter spacing value">0px</span>
-              <button class="acc-step-btn" id="acc-ls-up" aria-label="Increase letter spacing">+</button>
-            </div>
-          </div>
-
-          <div class="acc-stepper">
-            <div class="acc-stepper-label"><span class="acc-row-icon" aria-hidden="true">⎵</span> Word Spacing</div>
-            <div class="acc-stepper-ctrl">
-              <button class="acc-step-btn" id="acc-ws-dn" aria-label="Decrease word spacing">−</button>
-              <span class="acc-step-val" id="acc-ws-val" aria-live="polite" aria-label="Word spacing value">0px</span>
-              <button class="acc-step-btn" id="acc-ws-up" aria-label="Increase word spacing">+</button>
-            </div>
-          </div>
-
-          <div class="acc-select-row">
-            <div class="acc-stepper-label"><span class="acc-row-icon" aria-hidden="true">🔡</span> Font Family</div>
-            <select id="acc-font-family" aria-label="Select font family">
-              <option value="">Default</option>
-              <option value="dyslexia">Dyslexia</option>
-              <option value="readable">Readable</option>
-              <option value="mono">Monospace</option>
-            </select>
-          </div>
-
-          <div class="acc-align-row">
-            <div class="acc-stepper-label"><span class="acc-row-icon" aria-hidden="true">≡</span> Text Align</div>
-            <div class="acc-align-btns" role="group" aria-label="Text alignment">
-              <button class="acc-align-btn" data-align="" aria-label="Default alignment" aria-pressed="true">−</button>
-              <button class="acc-align-btn" data-align="acc-text-align-left" aria-label="Align left" aria-pressed="false">⬅</button>
-              <button class="acc-align-btn" data-align="acc-text-align-center" aria-label="Align center" aria-pressed="false">≡</button>
-              <button class="acc-align-btn" data-align="acc-text-align-right" aria-label="Align right" aria-pressed="false">➡</button>
-            </div>
-          </div>
-
-          <div class="acc-section">Vision</div>
-
-          <div class="acc-colors-box">
-            <div class="acc-colors-label" id="acc-filter-label"><span aria-hidden="true">🎨</span> Colour Filter</div>
-            <div class="acc-swatches" id="acc-swatches" role="radiogroup" aria-labelledby="acc-filter-label">
-              <button class="acc-swatch acc-picked" data-filter="" style="background:#112244;border-color:#4a6a9b;color:#8a9bbf;" aria-label="No filter (default)" aria-checked="true" role="radio" title="Default">↺</button>
-              <button class="acc-swatch" data-filter="acc-high-contrast"  style="background:#000;color:#fff;"  aria-label="High contrast" aria-checked="false" role="radio" title="High Contrast">HC</button>
-              <button class="acc-swatch" data-filter="acc-invert"         style="background:linear-gradient(135deg,#000 50%,#fff 50%);" aria-label="Invert colours" aria-checked="false" role="radio" title="Invert"></button>
-              <button class="acc-swatch" data-filter="acc-grayscale"      style="background:#888;" aria-label="Greyscale" aria-checked="false" role="radio" title="Greyscale">GS</button>
-              <button class="acc-swatch" data-filter="acc-low-saturation" style="background:#b3a89d;" aria-label="Low saturation" aria-checked="false" role="radio" title="Low Saturation">LS</button>
-            </div>
-          </div>
-
-          <div class="acc-section">Navigation & Focus</div>
-
-          <div class="acc-row" id="acc-t-focus" role="switch" aria-checked="false" tabindex="0">
-            <div><div class="acc-row-label"><span class="acc-row-icon" aria-hidden="true">🔲</span> Focus Ring</div><div class="acc-row-sub">Enhanced keyboard focus indicator</div></div>
-            <div class="acc-switch" aria-hidden="true"></div>
-          </div>
-          <div class="acc-row" id="acc-t-keyboard" role="switch" aria-checked="false" tabindex="0">
-            <div><div class="acc-row-label"><span class="acc-row-icon" aria-hidden="true">⌨</span> Keyboard Navigation</div><div class="acc-row-sub">High-visibility yellow focus ring</div></div>
-            <div class="acc-switch" aria-hidden="true"></div>
-          </div>
-          <div class="acc-row" id="acc-t-cursor" role="switch" aria-checked="false" tabindex="0">
-            <div><div class="acc-row-label"><span class="acc-row-icon" aria-hidden="true">🖱</span> Large Cursor</div><div class="acc-row-sub">Enlarged mouse pointer</div></div>
-            <div class="acc-switch" aria-hidden="true"></div>
-          </div>
-          <div class="acc-row" id="acc-t-bigtargets" role="switch" aria-checked="false" tabindex="0">
-            <div><div class="acc-row-label"><span class="acc-row-icon" aria-hidden="true">🎯</span> Big Click Targets</div><div class="acc-row-sub">Min 44px touch target on links &amp; buttons</div></div>
-            <div class="acc-switch" aria-hidden="true"></div>
-          </div>
-          <div class="acc-row" id="acc-t-links" role="switch" aria-checked="false" tabindex="0">
-            <div><div class="acc-row-label"><span class="acc-row-icon" aria-hidden="true">🔗</span> Highlight Links</div><div class="acc-row-sub">Outlines all hyperlinks</div></div>
-            <div class="acc-switch" aria-hidden="true"></div>
-          </div>
-          <div class="acc-row" id="acc-t-headings" role="switch" aria-checked="false" tabindex="0">
-            <div><div class="acc-row-label"><span class="acc-row-icon" aria-hidden="true">📋</span> Highlight Headings</div><div class="acc-row-sub">Outlines all H1–H6 elements</div></div>
-            <div class="acc-switch" aria-hidden="true"></div>
-          </div>
-          <div class="acc-row" id="acc-t-hover" role="switch" aria-checked="false" tabindex="0">
-            <div><div class="acc-row-label"><span class="acc-row-icon" aria-hidden="true">✨</span> Highlight on Hover</div><div class="acc-row-sub">Visual outline on hovered elements</div></div>
-            <div class="acc-switch" aria-hidden="true"></div>
-          </div>
-
-          <div class="acc-section">Reading</div>
-
-          <div class="acc-row" id="acc-t-guide" role="switch" aria-checked="false" tabindex="0">
-            <div><div class="acc-row-label"><span class="acc-row-icon" aria-hidden="true">📏</span> Reading Guide</div><div class="acc-row-sub">Highlights current reading line</div></div>
-            <div class="acc-switch" aria-hidden="true"></div>
-          </div>
-          <div class="acc-row" id="acc-t-mask" role="switch" aria-checked="false" tabindex="0">
-            <div><div class="acc-row-label"><span class="acc-row-icon" aria-hidden="true">🎭</span> Reading Mask</div><div class="acc-row-sub">Darkens page above &amp; below focus line</div></div>
-            <div class="acc-switch" aria-hidden="true"></div>
-          </div>
-          <div class="acc-row" id="acc-t-spacing" role="switch" aria-checked="false" tabindex="0">
-            <div><div class="acc-row-label"><span class="acc-row-icon" aria-hidden="true">📐</span> Text Spacing</div><div class="acc-row-sub">Extra word &amp; letter spacing (WCAG 1.4.12)</div></div>
-            <div class="acc-switch" aria-hidden="true"></div>
-          </div>
-
-          <div class="acc-section">Motion &amp; Media</div>
-
-          <div class="acc-row" id="acc-t-anim" role="switch" aria-checked="false" tabindex="0">
-            <div><div class="acc-row-label"><span class="acc-row-icon" aria-hidden="true">⏸</span> Pause Animations</div><div class="acc-row-sub">Stops all motion &amp; transitions</div></div>
-            <div class="acc-switch" aria-hidden="true"></div>
-          </div>
-          <div class="acc-row" id="acc-t-media" role="switch" aria-checked="false" tabindex="0">
-            <div><div class="acc-row-label"><span class="acc-row-icon" aria-hidden="true">🔇</span> Mute All Media</div><div class="acc-row-sub">Silences auto-playing audio &amp; video</div></div>
-            <div class="acc-switch" aria-hidden="true"></div>
-          </div>
-          <div class="acc-row" id="acc-t-stimulus" role="switch" aria-checked="false" tabindex="0">
-            <div><div class="acc-row-label"><span class="acc-row-icon" aria-hidden="true">🧘</span> Reduce Stimulus</div><div class="acc-row-sub">Softer colours, reduced visual noise</div></div>
-            <div class="acc-switch" aria-hidden="true"></div>
-          </div>
-
-          <button class="acc-reset" id="acc-reset" aria-label="Reset all accessibility settings to default">↺ Reset All Settings</button>
-        </div>
-      </div>
-
-
-      <!-- ═══ AUTO-FIX / SCAN TAB ═══ -->
-      <div class="acc-panel-content" data-panel="autofix" id="panel-autofix" role="tabpanel" aria-labelledby="tab-autofix" tabindex="0">
-        <div class="acc-fix-body">
-
-          <div class="acc-score-card">
-            <div class="acc-score-ring">
-              <div>
-                <div class="acc-score-num" id="acc-score">—</div>
-                <div class="acc-score-label">/100</div>
-              </div>
-            </div>
-            <div class="acc-score-sub" id="acc-score-sub">Run a scan to check this page</div>
-            <div class="acc-stats">
-              <div class="acc-stat">
-                <div class="acc-stat-n g" id="acc-n-fixed">—</div>
-                <div class="acc-stat-l">Fixed</div>
-              </div>
-              <div class="acc-stat">
-                <div class="acc-stat-n y" id="acc-n-warn">—</div>
-                <div class="acc-stat-l">Warnings</div>
-              </div>
-              <div class="acc-stat">
-                <div class="acc-stat-n r" id="acc-n-err">—</div>
-                <div class="acc-stat-l">Failures</div>
-              </div>
-            </div>
-          </div>
-
-          <div style="font-size:.72rem;color:var(--acc-muted);background:rgba(79,142,247,.06);border:1px solid rgba(79,142,247,.15);border-radius:8px;padding:9px 12px;line-height:1.6;">
-            ℹ️ Scans this page only. The widget runs on every page of your site — each page visited contributes to your site-wide score in your ACC dashboard.
-          </div>
-
-          <button class="acc-scan-btn" id="acc-scan" aria-label="Run accessibility scan on this page">
-            ♿ Scan This Page
-          </button>
-
-          <div class="acc-issues" id="acc-issues">
-            <div style="text-align:center;color:var(--acc-muted);font-size:.82rem;padding:20px 0;line-height:1.7;">
-              Click <strong style="color:var(--acc-accent)">Scan This Page</strong> to check for accessibility issues.<br>
-              <span style="font-size:.72rem;">Auto-fixes are applied immediately.</span>
-            </div>
-          </div>
-
-          <button class="acc-dl-btn" id="acc-dl-now" disabled aria-label="Download accessibility report for this page">
-            ↓ Download Page Report
-          </button>
-
-        </div>
-      </div>
-
-      <!-- ═══ HISTORY TAB ═══ -->
-      <div class="acc-panel-content" data-panel="history" id="panel-history" role="tabpanel" aria-labelledby="tab-history" tabindex="0">
-        <div class="acc-hist-body">
-          <div style="font-size:.72rem;color:var(--acc-muted);background:rgba(79,142,247,.06);border:1px solid rgba(79,142,247,.15);border-radius:8px;padding:9px 12px;line-height:1.6;margin-bottom:4px;">
-            Scan history for <strong style="color:var(--acc-text)" id="acc-hist-page-label">this page</strong>. Each visit auto-scans in the background.
-          </div>
-          <div class="acc-hist-empty" id="acc-hist-empty">
-            No scans yet for this page.<br>
-            <span style="font-size:.75rem;">Open the Scan tab and run your first scan.</span>
-          </div>
-          <div id="acc-hist-list"></div>
-        </div>
-      </div>
-
-      <!-- ═══ FEEDBACK TAB ═══ -->
-      <div class="acc-panel-content" data-panel="feedback" id="panel-feedback-tab" role="tabpanel" aria-labelledby="tab-feedback" tabindex="0">
-        <div class="acc-body">
-          <div class="acc-section">Submit Feedback</div>
-          <p style="font-size:.75rem;color:var(--acc-muted);line-height:1.6;padding:8px 0;">
-            Found an accessibility issue on this website? Let us know and we'll work to fix it.
-          </p>
-
-          <div id="acc-fb-success" style="display:none;background:rgba(56,217,169,.1);border:1px solid rgba(56,217,169,.3);border-radius:10px;padding:12px 14px;font-size:.82rem;color:var(--acc-accent2);text-align:center;">
-            ✓ Thank you! Your feedback has been submitted.
-          </div>
-
-          <div id="acc-fb-form">
-            <div style="display:flex;flex-direction:column;gap:8px;">
-              <div>
-                <label for="acc-fb-type" style="font-size:.72rem;font-weight:600;color:var(--acc-muted);display:block;margin-bottom:4px;text-transform:uppercase;letter-spacing:.08em;">Type</label>
-                <select id="acc-fb-type" style="width:100%;background:var(--acc-surface);border:1px solid var(--acc-border);border-radius:8px;color:var(--acc-text);font-family:var(--acc-font);font-size:.82rem;padding:8px 10px;outline:none;cursor:pointer;">
-                  <option value="contrast">Colour / Contrast</option>
-                  <option value="navigation">Navigation / Keyboard</option>
-                  <option value="screen-reader">Screen Reader</option>
-                  <option value="captions">Captions / Media</option>
-                  <option value="other">Other</option>
-                </select>
-              </div>
-
-              <div>
-                <label for="acc-fb-msg" style="font-size:.72rem;font-weight:600;color:var(--acc-muted);display:block;margin-bottom:4px;text-transform:uppercase;letter-spacing:.08em;">Description</label>
-                <textarea id="acc-fb-msg" rows="3" placeholder="Describe the issue you encountered…"
-                  style="width:100%;background:var(--acc-surface);border:1px solid var(--acc-border);border-radius:8px;color:var(--acc-text);font-family:var(--acc-font);font-size:.82rem;padding:9px 10px;outline:none;resize:vertical;line-height:1.5;"></textarea>
-              </div>
-
-              <div>
-                <label for="acc-fb-email" style="font-size:.72rem;font-weight:600;color:var(--acc-muted);display:block;margin-bottom:4px;text-transform:uppercase;letter-spacing:.08em;">Your Email <span style="font-weight:400;text-transform:none;">(optional)</span></label>
-                <input id="acc-fb-email" type="email" placeholder="so we can follow up with you"
-                  style="width:100%;background:var(--acc-surface);border:1px solid var(--acc-border);border-radius:8px;color:var(--acc-text);font-family:var(--acc-font);font-size:.82rem;padding:8px 10px;outline:none;" />
-              </div>
-
-              <button id="acc-fb-submit"
-                style="width:100%;padding:11px;border-radius:10px;border:none;background:linear-gradient(135deg,var(--acc-accent),#3a6fd8);color:#fff;font-size:.85rem;font-weight:700;cursor:pointer;font-family:var(--acc-font);transition:opacity .15s;display:flex;align-items:center;justify-content:center;gap:8px;box-shadow:0 4px 14px rgba(79,142,247,.3);"
-                aria-label="Submit accessibility feedback">
-                💬 Submit Feedback
-              </button>
-
-              <p id="acc-fb-error" style="display:none;font-size:.75rem;color:var(--acc-error);text-align:center;padding:4px 0;"></p>
-            </div>
-          </div>
-
-          <div class="acc-section" style="margin-top:4px;">Page URL</div>
-          <p style="font-size:.72rem;color:var(--acc-muted);font-family:var(--acc-mono);word-break:break-all;" id="acc-fb-url"></p>
-        </div>
-      </div>
-
-
-      <div class="acc-footer">
-        <img src="${ACC_LOGO}" alt="" aria-hidden="true" />
-        ACC Accessibility Widget &mdash; Auto AI Engine
-      </div>
-    </div>
+<div id="acc-reading-line" role="presentation" aria-hidden="true"></div> <div id="acc-reading-mask-top" aria-hidden="true"></div> <div id="acc-reading-mask-bottom" aria-hidden="true"></div> <div id="acc-status" aria-live="polite" aria-atomic="true" role="status"></div> <button id="acc-toggle" aria-label="Open ACC Accessibility Panel" aria-expanded="false" aria-haspopup="dialog"> <img src="${ACC_LOGO}" alt="" aria-hidden="true" /> <span id="acc-toggle-label" aria-hidden="true">A11Y</span> </button> <div id="acc-panel" role="dialog" aria-modal="true" aria-label="ACC Accessibility Settings"> <div class="acc-header"> <div class="acc-header-top"> <img class="acc-header-logo" src="${ACC_LOGO}" alt="" aria-hidden="true" /> <div class="acc-header-title"> <h2>ACC Accessibility</h2> <p>Powered by Auto AI Engine</p> </div> <div class="acc-lang-wrap" id="acc-lang-wrap" style="position:relative"> <button class="acc-lang-btn" id="acc-lang-btn" aria-label="Select language" aria-expanded="false" aria-haspopup="listbox"> <span class="acc-lang-globe" aria-hidden="true">&#127760;</span> <span class="acc-lang-label" id="acc-lang-current">EN</span> </button> <div class="acc-lang-dropdown" id="acc-lang-dropdown" role="listbox" aria-label="Select language"> <input class="acc-lang-search" type="text" id="acc-lang-search" placeholder="Search language…" aria-label="Search languages" autocomplete="off" /> <div id="acc-lang-list"></div> </div> </div> <button class="acc-close-btn" id="acc-close" aria-label="Close accessibility panel">✕</button> </div> <div class="acc-active-profile-badge" id="acc-active-badge" aria-live="polite"> <span id="acc-active-badge-text"></span> <button id="acc-clear-profile" aria-label="Clear active profile">✕ Clear</button> </div> <div class="acc-tabs" role="tablist" aria-label="Accessibility settings sections"> <button class="acc-tab acc-active" data-tab="profiles" role="tab" aria-selected="true"  aria-controls="panel-profiles" id="tab-profiles">👤 Profiles</button> <button class="acc-tab"            data-tab="settings" role="tab" aria-selected="false" aria-controls="panel-settings" id="tab-settings">⚙ Settings</button> <button class="acc-tab"            data-tab="feedback" role="tab" aria-selected="false" aria-controls="panel-feedback-tab" id="tab-feedback">💬 Feedback</button> <!-- Scan and History tabs hidden from end users — data still collected in background --> <button class="acc-tab" data-tab="autofix"  role="tab" aria-selected="false" aria-controls="panel-autofix"  id="tab-autofix"  style="display:none">🔍 Scan</button> <button class="acc-tab" data-tab="history"  role="tab" aria-selected="false" aria-controls="panel-history"  id="tab-history"  style="display:none">🕑 History</button> </div> </div> <!-- ═══ PROFILES TAB ═══ --> <div class="acc-panel-content acc-active" data-panel="profiles" id="panel-profiles" role="tabpanel" aria-labelledby="tab-profiles" tabindex="0"> <div class="acc-profiles-body"> <div class="acc-profiles-intro"> Select a profile to instantly apply accessibility settings tailored for a specific need. You can then fine-tune individual settings in the Settings tab. </div> <div class="acc-profile-card" data-profile="visually-impaired" role="button" tabindex="0" aria-pressed="false" aria-label="Visually Impaired profile"> <div class="acc-profile-icon" aria-hidden="true">👁</div> <div class="acc-profile-info"> <div class="acc-profile-name">Visually Impaired</div> <div class="acc-profile-desc">Larger text, high contrast, enhanced focus indicators</div> <div class="acc-profile-tags"> <span class="acc-profile-tag">Large Text</span> <span class="acc-profile-tag">High Contrast</span> <span class="acc-profile-tag">Focus Ring</span> </div> </div> <div class="acc-profile-check" aria-hidden="true"></div> </div> <div class="acc-profile-card" data-profile="cognitive" role="button" tabindex="0" aria-pressed="false" aria-label="Cognitive and Learning profile"> <div class="acc-profile-icon" aria-hidden="true">🧠</div> <div class="acc-profile-info"> <div class="acc-profile-name">Cognitive / Learning</div> <div class="acc-profile-desc">Dyslexia font, extra spacing, no animations, reading guide</div> <div class="acc-profile-tags"> <span class="acc-profile-tag">Dyslexia Font</span> <span class="acc-profile-tag">Text Spacing</span> <span class="acc-profile-tag">No Animations</span> </div> </div> <div class="acc-profile-check" aria-hidden="true"></div> </div> <div class="acc-profile-card" data-profile="motor" role="button" tabindex="0" aria-pressed="false" aria-label="Motor and Physical Impaired profile"> <div class="acc-profile-icon" aria-hidden="true">🖱</div> <div class="acc-profile-info"> <div class="acc-profile-name">Motor / Physical</div> <div class="acc-profile-desc">Large cursor, bigger click targets, keyboard navigation</div> <div class="acc-profile-tags"> <span class="acc-profile-tag">Large Cursor</span> <span class="acc-profile-tag">Big Targets</span> <span class="acc-profile-tag">Keyboard Nav</span> </div> </div> <div class="acc-profile-check" aria-hidden="true"></div> </div> <div class="acc-profile-card" data-profile="deaf" role="button" tabindex="0" aria-pressed="false" aria-label="Deaf and Hard of Hearing profile"> <div class="acc-profile-icon" aria-hidden="true">🔇</div> <div class="acc-profile-info"> <div class="acc-profile-name">Deaf / Hard of Hearing</div> <div class="acc-profile-desc">Highlighted links, muted media, visual cues emphasized</div> <div class="acc-profile-tags"> <span class="acc-profile-tag">Highlight Links</span> <span class="acc-profile-tag">Mute Media</span> <span class="acc-profile-tag">Visual Cues</span> </div> </div> <div class="acc-profile-check" aria-hidden="true"></div> </div> <div class="acc-profile-card" data-profile="adhd" role="button" tabindex="0" aria-pressed="false" aria-label="ADHD Friendly profile"> <div class="acc-profile-icon" aria-hidden="true">⚡</div> <div class="acc-profile-info"> <div class="acc-profile-name">ADHD Friendly</div> <div class="acc-profile-desc">Reduced visual stimulus, no animations, readable font</div> <div class="acc-profile-tags"> <span class="acc-profile-tag">Reduced Stimulus</span> <span class="acc-profile-tag">No Animations</span> <span class="acc-profile-tag">Readable Font</span> </div> </div> <div class="acc-profile-check" aria-hidden="true"></div> </div> <div class="acc-profile-card" data-profile="senior" role="button" tabindex="0" aria-pressed="false" aria-label="Senior Friendly profile"> <div class="acc-profile-icon" aria-hidden="true">👴</div> <div class="acc-profile-info"> <div class="acc-profile-name">Senior Friendly</div> <div class="acc-profile-desc">Bigger text, larger cursor, high contrast, generous spacing</div> <div class="acc-profile-tags"> <span class="acc-profile-tag">Large Text</span> <span class="acc-profile-tag">Large Cursor</span> <span class="acc-profile-tag">High Contrast</span> </div> </div> <div class="acc-profile-check" aria-hidden="true"></div> </div> </div> </div> <!-- ═══ SETTINGS TAB ═══ --> <div class="acc-panel-content" data-panel="settings" id="panel-settings" role="tabpanel" aria-labelledby="tab-settings" tabindex="0"> <div class="acc-body"> <div class="acc-section">Content</div> <div class="acc-stepper"> <div class="acc-stepper-label"><span class="acc-row-icon" aria-hidden="true">🔤</span> Font Size</div> <div class="acc-stepper-ctrl"> <button class="acc-step-btn" id="acc-fs-dn" aria-label="Decrease font size">−</button> <span class="acc-step-val" id="acc-fs-val" aria-live="polite" aria-label="Font size value">100%</span> <button class="acc-step-btn" id="acc-fs-up" aria-label="Increase font size">+</button> </div> </div> <div class="acc-stepper"> <div class="acc-stepper-label"><span class="acc-row-icon" aria-hidden="true">↕</span> Line Height</div> <div class="acc-stepper-ctrl"> <button class="acc-step-btn" id="acc-lh-dn" aria-label="Decrease line height">−</button> <span class="acc-step-val" id="acc-lh-val" aria-live="polite" aria-label="Line height value">1.6</span> <button class="acc-step-btn" id="acc-lh-up" aria-label="Increase line height">+</button> </div> </div> <div class="acc-stepper"> <div class="acc-stepper-label"><span class="acc-row-icon" aria-hidden="true">↔</span> Letter Spacing</div> <div class="acc-stepper-ctrl"> <button class="acc-step-btn" id="acc-ls-dn" aria-label="Decrease letter spacing">−</button> <span class="acc-step-val" id="acc-ls-val" aria-live="polite" aria-label="Letter spacing value">0px</span> <button class="acc-step-btn" id="acc-ls-up" aria-label="Increase letter spacing">+</button> </div> </div> <div class="acc-stepper"> <div class="acc-stepper-label"><span class="acc-row-icon" aria-hidden="true">⎵</span> Word Spacing</div> <div class="acc-stepper-ctrl"> <button class="acc-step-btn" id="acc-ws-dn" aria-label="Decrease word spacing">−</button> <span class="acc-step-val" id="acc-ws-val" aria-live="polite" aria-label="Word spacing value">0px</span> <button class="acc-step-btn" id="acc-ws-up" aria-label="Increase word spacing">+</button> </div> </div> <div class="acc-select-row"> <div class="acc-stepper-label"><span class="acc-row-icon" aria-hidden="true">🔡</span> Font Family</div> <select id="acc-font-family" aria-label="Select font family"> <option value="">Default</option> <option value="dyslexia">Dyslexia</option> <option value="readable">Readable</option> <option value="mono">Monospace</option> </select> </div> <div class="acc-align-row"> <div class="acc-stepper-label"><span class="acc-row-icon" aria-hidden="true">≡</span> Text Align</div> <div class="acc-align-btns" role="group" aria-label="Text alignment"> <button class="acc-align-btn" data-align="" aria-label="Default alignment" aria-pressed="true">−</button> <button class="acc-align-btn" data-align="acc-text-align-left" aria-label="Align left" aria-pressed="false">⬅</button> <button class="acc-align-btn" data-align="acc-text-align-center" aria-label="Align center" aria-pressed="false">≡</button> <button class="acc-align-btn" data-align="acc-text-align-right" aria-label="Align right" aria-pressed="false">➡</button> </div> </div> <div class="acc-section">Vision</div> <div class="acc-colors-box"> <div class="acc-colors-label" id="acc-filter-label"><span aria-hidden="true">🎨</span> Colour Filter</div> <div class="acc-swatches" id="acc-swatches" role="radiogroup" aria-labelledby="acc-filter-label"> <button class="acc-swatch acc-picked" data-filter="" style="background:#112244;border-color:#4a6a9b;color:#8a9bbf;" aria-label="No filter (default)" aria-checked="true" role="radio" title="Default">↺</button> <button class="acc-swatch" data-filter="acc-high-contrast"  style="background:#000;color:#fff;"  aria-label="High contrast" aria-checked="false" role="radio" title="High Contrast">HC</button> <button class="acc-swatch" data-filter="acc-invert"         style="background:linear-gradient(135deg,#000 50%,#fff 50%);" aria-label="Invert colours" aria-checked="false" role="radio" title="Invert"></button> <button class="acc-swatch" data-filter="acc-grayscale"      style="background:#888;" aria-label="Greyscale" aria-checked="false" role="radio" title="Greyscale">GS</button> <button class="acc-swatch" data-filter="acc-low-saturation" style="background:#b3a89d;" aria-label="Low saturation" aria-checked="false" role="radio" title="Low Saturation">LS</button> </div> </div> <div class="acc-section">Navigation & Focus</div> <div class="acc-row" id="acc-t-focus" role="switch" aria-checked="false" tabindex="0"> <div><div class="acc-row-label"><span class="acc-row-icon" aria-hidden="true">🔲</span> Focus Ring</div><div class="acc-row-sub">Enhanced keyboard focus indicator</div></div> <div class="acc-switch" aria-hidden="true"></div> </div> <div class="acc-row" id="acc-t-keyboard" role="switch" aria-checked="false" tabindex="0"> <div><div class="acc-row-label"><span class="acc-row-icon" aria-hidden="true">⌨</span> Keyboard Navigation</div><div class="acc-row-sub">High-visibility yellow focus ring</div></div> <div class="acc-switch" aria-hidden="true"></div> </div> <div class="acc-row" id="acc-t-cursor" role="switch" aria-checked="false" tabindex="0"> <div><div class="acc-row-label"><span class="acc-row-icon" aria-hidden="true">🖱</span> Large Cursor</div><div class="acc-row-sub">Enlarged mouse pointer</div></div> <div class="acc-switch" aria-hidden="true"></div> </div> <div class="acc-row" id="acc-t-bigtargets" role="switch" aria-checked="false" tabindex="0"> <div><div class="acc-row-label"><span class="acc-row-icon" aria-hidden="true">🎯</span> Big Click Targets</div><div class="acc-row-sub">Min 44px touch target on links &amp; buttons</div></div> <div class="acc-switch" aria-hidden="true"></div> </div> <div class="acc-row" id="acc-t-links" role="switch" aria-checked="false" tabindex="0"> <div><div class="acc-row-label"><span class="acc-row-icon" aria-hidden="true">🔗</span> Highlight Links</div><div class="acc-row-sub">Outlines all hyperlinks</div></div> <div class="acc-switch" aria-hidden="true"></div> </div> <div class="acc-row" id="acc-t-headings" role="switch" aria-checked="false" tabindex="0"> <div><div class="acc-row-label"><span class="acc-row-icon" aria-hidden="true">📋</span> Highlight Headings</div><div class="acc-row-sub">Outlines all H1–H6 elements</div></div> <div class="acc-switch" aria-hidden="true"></div> </div> <div class="acc-row" id="acc-t-hover" role="switch" aria-checked="false" tabindex="0"> <div><div class="acc-row-label"><span class="acc-row-icon" aria-hidden="true">✨</span> Highlight on Hover</div><div class="acc-row-sub">Visual outline on hovered elements</div></div> <div class="acc-switch" aria-hidden="true"></div> </div> <div class="acc-section">Reading</div> <div class="acc-row" id="acc-t-guide" role="switch" aria-checked="false" tabindex="0"> <div><div class="acc-row-label"><span class="acc-row-icon" aria-hidden="true">📏</span> Reading Guide</div><div class="acc-row-sub">Highlights current reading line</div></div> <div class="acc-switch" aria-hidden="true"></div> </div> <div class="acc-row" id="acc-t-mask" role="switch" aria-checked="false" tabindex="0"> <div><div class="acc-row-label"><span class="acc-row-icon" aria-hidden="true">🎭</span> Reading Mask</div><div class="acc-row-sub">Darkens page above &amp; below focus line</div></div> <div class="acc-switch" aria-hidden="true"></div> </div> <div class="acc-row" id="acc-t-spacing" role="switch" aria-checked="false" tabindex="0"> <div><div class="acc-row-label"><span class="acc-row-icon" aria-hidden="true">📐</span> Text Spacing</div><div class="acc-row-sub">Extra word &amp; letter spacing (WCAG 1.4.12)</div></div> <div class="acc-switch" aria-hidden="true"></div> </div> <div class="acc-section">Motion &amp; Media</div> <div class="acc-row" id="acc-t-anim" role="switch" aria-checked="false" tabindex="0"> <div><div class="acc-row-label"><span class="acc-row-icon" aria-hidden="true">⏸</span> Pause Animations</div><div class="acc-row-sub">Stops all motion &amp; transitions</div></div> <div class="acc-switch" aria-hidden="true"></div> </div> <div class="acc-row" id="acc-t-media" role="switch" aria-checked="false" tabindex="0"> <div><div class="acc-row-label"><span class="acc-row-icon" aria-hidden="true">🔇</span> Mute All Media</div><div class="acc-row-sub">Silences auto-playing audio &amp; video</div></div> <div class="acc-switch" aria-hidden="true"></div> </div> <div class="acc-row" id="acc-t-stimulus" role="switch" aria-checked="false" tabindex="0"> <div><div class="acc-row-label"><span class="acc-row-icon" aria-hidden="true">🧘</span> Reduce Stimulus</div><div class="acc-row-sub">Softer colours, reduced visual noise</div></div> <div class="acc-switch" aria-hidden="true"></div> </div> <button class="acc-reset" id="acc-reset" aria-label="Reset all accessibility settings to default">↺ Reset All Settings</button> </div> </div> <!-- ═══ AUTO-FIX / SCAN TAB ═══ --> <div class="acc-panel-content" data-panel="autofix" id="panel-autofix" role="tabpanel" aria-labelledby="tab-autofix" tabindex="0"> <div class="acc-fix-body"> <div class="acc-score-card"> <div class="acc-score-ring"> <div> <div class="acc-score-num" id="acc-score">—</div> <div class="acc-score-label">/100</div> </div> </div> <div class="acc-score-sub" id="acc-score-sub">Run a scan to check this page</div> <div class="acc-stats"> <div class="acc-stat"> <div class="acc-stat-n g" id="acc-n-fixed">—</div> <div class="acc-stat-l">Fixed</div> </div> <div class="acc-stat"> <div class="acc-stat-n y" id="acc-n-warn">—</div> <div class="acc-stat-l">Warnings</div> </div> <div class="acc-stat"> <div class="acc-stat-n r" id="acc-n-err">—</div> <div class="acc-stat-l">Failures</div> </div> </div> </div> <div style="font-size:.72rem;color:var(--acc-muted);background:rgba(79,142,247,.06);border:1px solid rgba(79,142,247,.15);border-radius:8px;padding:9px 12px;line-height:1.6;"> ℹ️ Scans this page only. The widget runs on every page of your site — each page visited contributes to your site-wide score in your ACC dashboard. </div> <button class="acc-scan-btn" id="acc-scan" aria-label="Run accessibility scan on this page"> ♿ Scan This Page </button> <div class="acc-issues" id="acc-issues"> <div style="text-align:center;color:var(--acc-muted);font-size:.82rem;padding:20px 0;line-height:1.7;"> Click <strong style="color:var(--acc-accent)">Scan This Page</strong> to check for accessibility issues.<br> <span style="font-size:.72rem;">Auto-fixes are applied immediately.</span> </div> </div> <button class="acc-dl-btn" id="acc-dl-now" disabled aria-label="Download accessibility report for this page"> ↓ Download Page Report </button> </div> </div> <!-- ═══ HISTORY TAB ═══ --> <div class="acc-panel-content" data-panel="history" id="panel-history" role="tabpanel" aria-labelledby="tab-history" tabindex="0"> <div class="acc-hist-body"> <div style="font-size:.72rem;color:var(--acc-muted);background:rgba(79,142,247,.06);border:1px solid rgba(79,142,247,.15);border-radius:8px;padding:9px 12px;line-height:1.6;margin-bottom:4px;"> Scan history for <strong style="color:var(--acc-text)" id="acc-hist-page-label">this page</strong>. Each visit auto-scans in the background. </div> <div class="acc-hist-empty" id="acc-hist-empty"> No scans yet for this page.<br> <span style="font-size:.75rem;">Open the Scan tab and run your first scan.</span> </div> <div id="acc-hist-list"></div> </div> </div> <!-- ═══ FEEDBACK TAB ═══ --> <div class="acc-panel-content" data-panel="feedback" id="panel-feedback-tab" role="tabpanel" aria-labelledby="tab-feedback" tabindex="0"> <div class="acc-body"> <div class="acc-section">Submit Feedback</div> <p style="font-size:.75rem;color:var(--acc-muted);line-height:1.6;padding:8px 0;"> Found an accessibility issue on this website? Let us know and we'll work to fix it. </p> <div id="acc-fb-success" style="display:none;background:rgba(56,217,169,.1);border:1px solid rgba(56,217,169,.3);border-radius:10px;padding:12px 14px;font-size:.82rem;color:var(--acc-accent2);text-align:center;"> ✓ Thank you! Your feedback has been submitted. </div> <div id="acc-fb-form"> <div style="display:flex;flex-direction:column;gap:8px;"> <div> <label for="acc-fb-type" style="font-size:.72rem;font-weight:600;color:var(--acc-muted);display:block;margin-bottom:4px;text-transform:uppercase;letter-spacing:.08em;">Type</label> <select id="acc-fb-type" style="width:100%;background:var(--acc-surface);border:1px solid var(--acc-border);border-radius:8px;color:var(--acc-text);font-family:var(--acc-font);font-size:.82rem;padding:8px 10px;outline:none;cursor:pointer;"> <option value="contrast">Colour / Contrast</option> <option value="navigation">Navigation / Keyboard</option> <option value="screen-reader">Screen Reader</option> <option value="captions">Captions / Media</option> <option value="other">Other</option> </select> </div> <div> <label for="acc-fb-msg" style="font-size:.72rem;font-weight:600;color:var(--acc-muted);display:block;margin-bottom:4px;text-transform:uppercase;letter-spacing:.08em;">Description</label> <textarea id="acc-fb-msg" rows="3" placeholder="Describe the issue you encountered…" style="width:100%;background:var(--acc-surface);border:1px solid var(--acc-border);border-radius:8px;color:var(--acc-text);font-family:var(--acc-font);font-size:.82rem;padding:9px 10px;outline:none;resize:vertical;line-height:1.5;"></textarea> </div> <div> <label for="acc-fb-email" style="font-size:.72rem;font-weight:600;color:var(--acc-muted);display:block;margin-bottom:4px;text-transform:uppercase;letter-spacing:.08em;">Your Email <span style="font-weight:400;text-transform:none;">(optional)</span></label> <input id="acc-fb-email" type="email" placeholder="so we can follow up with you" style="width:100%;background:var(--acc-surface);border:1px solid var(--acc-border);border-radius:8px;color:var(--acc-text);font-family:var(--acc-font);font-size:.82rem;padding:8px 10px;outline:none;" /> </div> <button id="acc-fb-submit" style="width:100%;padding:11px;border-radius:10px;border:none;background:linear-gradient(135deg,var(--acc-accent),#3a6fd8);color:#fff;font-size:.85rem;font-weight:700;cursor:pointer;font-family:var(--acc-font);transition:opacity .15s;display:flex;align-items:center;justify-content:center;gap:8px;box-shadow:0 4px 14px rgba(79,142,247,.3);" aria-label="Submit accessibility feedback"> 💬 Submit Feedback </button> <p id="acc-fb-error" style="display:none;font-size:.75rem;color:var(--acc-error);text-align:center;padding:4px 0;"></p> </div> </div> <div class="acc-section" style="margin-top:4px;">Page URL</div> <p style="font-size:.72rem;color:var(--acc-muted);font-family:var(--acc-mono);word-break:break-all;" id="acc-fb-url"></p> </div> </div> <div class="acc-footer"> <img src="${ACC_LOGO}" alt="" aria-hidden="true" /> ACC Accessibility Widget &mdash; Auto AI Engine </div> </div>
   `;
   document.body.appendChild(root);
 
-  // ── Apply position from script-tag data-position attribute ──
   if (ACC_POS_OVERRIDE) {
     const pos     = ACC_POS_OVERRIDE.toLowerCase();
     const toggleEl = document.getElementById('acc-toggle');
@@ -1133,28 +194,17 @@
       panelEl.style.right  = right; panelEl.style.left = left;
     }
   }
-  // ── Apply feedback hide from script-tag attribute ──
   if (ACC_HIDE_FB) {
     const fbTab = document.getElementById('tab-feedback');
     if (fbTab) fbTab.style.display = 'none';
   }
 
-  // Apply i18n after DOM built
-  ;(function(){ var T=getTranslations(ACC_LANG_OVERRIDE); applyTranslation(T); })();
-  // ══════════════════════════════════════════════════════════
-  // LANGUAGE PICKER — in-widget language switcher
-  // Switches widget UI strings AND injects Google Translate
-  // for full page content translation.
-  // ══════════════════════════════════════════════════════════
-
-  // Full 55-language list: [code, English name, native name]
   const ACC_ALL_LANGS = [
     ['af','Afrikaans','Afrikaans'],
     ['sq','Albanian','Shqip'],
     ['am','Amharic','አማርኛ'],
     ['ar','Arabic','العربية'],
-    ['hy','Armenian','Հայերեն'],
-    ['hy','Armenian','Հայերեն'],
+    ['hy','Armenian','Հայերևն'],
     ['az','Azerbaijani','Azərbaycan'],
     ['eu','Basque','Euskara'],
     ['be','Belarusian','Беларуская'],
@@ -1172,7 +222,6 @@
     ['da','Danish','Dansk'],
     ['nl','Dutch','Nederlands'],
     ['en','English','English'],
-    ['eo','Esperanto','Esperanto'],
     ['et','Estonian','Eesti'],
     ['tl','Filipino','Tagalog'],
     ['fi','Finnish','Suomi'],
@@ -1184,8 +233,8 @@
     ['gu','Gujarati','ગુજરાતી'],
     ['ht','Haitian Creole','Kreyòl ayisyen'],
     ['ha','Hausa','Hausa'],
+    ['haw','Hawaiian','ʻOlelo Hawaiʻi'],
     ['he','Hebrew','עברית'],
-    ['iw','Hebrew (alt)','עברית'],
     ['hi','Hindi','हिन्दी'],
     ['hmn','Hmong','Hmoob'],
     ['hu','Hungarian','Magyar'],
@@ -1201,10 +250,8 @@
     ['ko','Korean','한국어'],
     ['ky','Kyrgyz','Кыргызча'],
     ['lo','Lao','ພາສາລາວ'],
-    ['la','Latin','Latina'],
     ['lv','Latvian','Latviešu'],
     ['lt','Lithuanian','Lietuvių'],
-    ['lb','Luxembourgish','Lëtzebuergesch'],
     ['mk','Macedonian','Македонски'],
     ['mg','Malagasy','Malagasy'],
     ['ms','Malay','Bahasa Melayu'],
@@ -1223,10 +270,11 @@
     ['pa','Punjabi','ਪੰਜਾਬੀ'],
     ['ro','Romanian','Română'],
     ['ru','Russian','Русский'],
+    ['sm','Samoan','Gagana Samoa'],
     ['sr','Serbian','Srpski'],
     ['st','Sesotho','Sesotho'],
     ['sn','Shona','chiShona'],
-    ['sd','Sindhi','سنڌي'],
+    ['sd','Sindhi','سنڈي'],
     ['si','Sinhala','සිංහල'],
     ['sk','Slovak','Slovenčina'],
     ['sl','Slovenian','Slovenščina'],
@@ -1259,11 +307,10 @@
     var listEl    = document.getElementById('acc-lang-list');
     if (!btn || !dropdown || !listEl) return;
 
-    // Build the language list
     function buildList(filter) {
       var q = (filter || '').toLowerCase();
       var html = '';
-      var pinned = ['en','fr'];  // Always shown at top for Canadian market
+      var pinned = ['en','fr'];
 
       function makeOption(item) {
         var code = item[0], name = item[1], native = item[2];
@@ -1275,7 +322,6 @@
           + '</button>';
       }
 
-      // Pinned languages at top (only when not filtering)
       if (!q) {
         pinned.forEach(function(code) {
           var item = ACC_ALL_LANGS.find(function(l){ return l[0] === code; });
@@ -1284,14 +330,12 @@
         if (html) html += '<div style="height:1px;background:#dce6f8;margin:3px 0"></div>';
       }
 
-      // Full list (excluding already-shown pinned when not filtering)
       ACC_ALL_LANGS.forEach(function(item) {
-        if (!q && pinned.indexOf(item[0]) >= 0) return; // skip pinned — already shown above
+        if (!q && pinned.indexOf(item[0]) >= 0) return;
         html += makeOption(item);
       });
 
       listEl.innerHTML = html || '<div style="padding:10px 12px;font-size:.75rem;color:var(--acc-muted)">No languages found</div>';
-      // Wire click
       listEl.querySelectorAll('.acc-lang-option').forEach(function(opt) {
         opt.addEventListener('click', function() {
           selectLanguage(opt.getAttribute('data-lang'));
@@ -1300,13 +344,11 @@
       });
     }
 
-    // Set initial label from active language
     var initLabel = document.getElementById('acc-lang-current');
     if (initLabel) initLabel.textContent = (_activeLang || 'en').toUpperCase().split('-')[0];
 
     buildList('');
 
-    // Toggle dropdown
     btn.addEventListener('click', function(e) {
       e.stopPropagation();
       var isOpen = dropdown.classList.contains('acc-lang-open');
@@ -1322,18 +364,15 @@
       }
     });
 
-    // Search filter
     searchEl.addEventListener('input', function() {
       buildList(searchEl.value);
     });
 
-    // Close on outside click
     document.addEventListener('click', function(e) {
       var wrap = document.getElementById('acc-lang-wrap');
       if (wrap && !wrap.contains(e.target)) closeLangDropdown();
     });
 
-    // Close on Escape
     document.addEventListener('keydown', function(e) {
       if (e.key === 'Escape') closeLangDropdown();
     });
@@ -1349,15 +388,13 @@
   function selectLanguage(langCode) {
     _activeLang = langCode;
 
-    // Show loading state on pill while GT works
     var labelEl = document.getElementById('acc-lang-current');
     var isEn = (langCode === 'en' || langCode === '');
     if (labelEl) {
       if (isEn) {
         labelEl.textContent = 'EN';
       } else {
-        labelEl.textContent = '⧗'; // hourglass-style spinner char
-        // After 3s max, show the code whether or not translation confirmed
+        labelEl.textContent = '⧗';
         setTimeout(function() {
           if (labelEl.textContent === '⧗') {
             labelEl.textContent = langCode.toUpperCase().split('-')[0];
@@ -1366,17 +403,8 @@
       }
     }
 
-    // ── Part 1: Translate widget UI strings ──────────────────────
-    var T = getTranslations(langCode);
-    applyTranslation(T);
-
-    // Update the active lang override so all subsequent calls use it
-    // (can't reassign const, so we track via _activeLang)
-
-    // ── Part 2: Full page translation via Google Translate ────────
     injectGoogleTranslate(langCode);
 
-    // Rebuild the list so selected item is highlighted
     var listEl = document.getElementById('acc-lang-list');
     if (listEl) {
       listEl.querySelectorAll('.acc-lang-option').forEach(function(opt) {
@@ -1386,30 +414,17 @@
       });
     }
 
-    // Announce to screen readers
     var langName = (ACC_ALL_LANGS.find(function(l){ return l[0] === langCode; }) || [])[1] || langCode;
     if (typeof announce === 'function') announce('Language changed to ' + langName);
   }
 
-  // ── Google Translate integration ─────────────────────────────────
-  // Uses Google Translate Element API (free, no API key needed for basic use).
-  // On first call: loads the script and initialises the element.
-  // On subsequent calls: uses the existing element's cookie to switch language.
-  // ════════════════════════════════════════════════════════════
-  // GOOGLE TRANSLATE — full page translation
-  // Strategy: load GT element script, then use doGTranslate()
-  // which is GT's own internal function and is the only truly
-  // reliable way to switch languages programmatically.
-  // doGTranslate('en|fr') translates the entire page DOM.
-  // ════════════════════════════════════════════════════════════
-
   var _gtInitialised = false;
-  var _gtPending     = null;   // language requested before GT loaded
+  var _gtPending     = null;
 
-  // Google Translate internal codes (differ from BCP-47 in key places)
   var GT_CODE_MAP = {
     'zh': 'zh-CN', 'zh-TW': 'zh-TW', 'he': 'iw', 'pt-BR': 'pt',
     'jv': 'jw',    'ceb': 'ceb',      'hmn': 'hmn',
+    'haw': 'haw',  'sm': 'sm',
   };
 
   function getGTCode(code) {
@@ -1428,18 +443,15 @@
       return;
     }
 
-    // Store request; will fire once GT is ready
     _gtPending = gtCode;
 
-    if (document.getElementById('acc-gt-script')) return; // already loading
+    if (document.getElementById('acc-gt-script')) return;
 
-    // Hidden container GT element needs
     var container = document.createElement('div');
     container.id = 'acc-gt-element';
     container.style.cssText = 'position:absolute;width:1px;height:1px;left:-9999px;overflow:hidden;';
     document.body.appendChild(container);
 
-    // GT calls this global when the script + element are ready
     window.googleTranslateElementInit = function() {
       try {
         new window.google.translate.TranslateElement({
@@ -1450,7 +462,6 @@
       } catch(e) {}
       _gtInitialised = true;
       if (_gtPending) {
-        // Small delay so GT finishes wiring its internals
         setTimeout(function() { doAccTranslate(_gtPending); _gtPending = null; }, 400);
       }
     };
@@ -1466,9 +477,6 @@
   }
 
   function doAccTranslate(gtCode) {
-    // doGTranslate is Google Translate's own switching function.
-    // Format: 'sourceLang|targetLang'
-    // Update pill label once we actually fire the translation
     var labelEl = document.getElementById('acc-lang-current');
     if (labelEl && labelEl.textContent === '⧗') {
       labelEl.textContent = (_activeLang || gtCode).toUpperCase().split('-')[0];
@@ -1479,7 +487,6 @@
         return;
       }
 
-      // Fallback 1: trigger the hidden combo select that GT creates
       var sel = document.querySelector('.goog-te-combo');
       if (sel) {
         sel.value = gtCode;
@@ -1487,7 +494,6 @@
         return;
       }
 
-      // Fallback 2: set the googtrans cookie and reload the GT iframe
       var host = window.location.hostname;
       document.cookie = 'googtrans=/en/' + gtCode + '; path=/; domain=.' + host;
       document.cookie = 'googtrans=/en/' + gtCode + '; path=/';
@@ -1502,36 +508,27 @@
 
   function restoreOriginalLanguage() {
     try {
-      // Reset widget UI to English immediately
-      var T = getTranslations('en');
-      applyTranslation(T);
       var lbl = document.getElementById('acc-lang-current');
       if (lbl) lbl.textContent = 'EN';
       _activeLang = 'en';
 
-      // If GT was never loaded, nothing to restore on the page
       if (!_gtInitialised) return;
 
-      // Clear googtrans cookie so the reload shows original language
       var host = window.location.hostname;
       var exp  = 'expires=Thu, 01 Jan 1970 00:00:00 UTC; path=/';
       document.cookie = 'googtrans=; ' + exp;
       document.cookie = 'googtrans=; ' + exp + '; domain=' + host;
       document.cookie = 'googtrans=; ' + exp + '; domain=.' + host;
 
-      // Save widget state so we can restore it after reload
       try {
         sessionStorage.setItem('acc_reopen', '1');
       } catch(e2) {}
 
-      // Reload restores the original page text (GT wraps can't be removed
-      // client-side without reload). Widget reopens automatically below.
       window.location.reload();
 
     } catch(e) {}
   }
 
-  // Hide GT's own toolbar (we provide the UI)
   var _gtStyle = document.createElement('style');
   _gtStyle.textContent = [
     '.goog-te-banner-frame{display:none!important}',
@@ -1543,28 +540,19 @@
   ].join(' ');
   document.head.appendChild(_gtStyle);
 
-
-  // Init the picker after DOM is ready
   initLangPicker();
 
-
-  // ══════════════════════════════════════════
-  // 3. STATE & REFS
-  // ══════════════════════════════════════════
   const S = {
     open: false, fontSize: 100, lineHeight: 1.6, letterSpacing: 0,
     wordSpacing: 0, colorFilter: '', textAlign: '', fontFamily: '',
     activeProfile: null, toggles: {}
   };
 
-  // ── Report behaviour config — loaded from widget_settings DB ──
-  // Defaults are permissive (all on). Admin can toggle per-client
-  // via the 4 columns added to the widget_settings table.
   const REPORT_CFG = {
-    show_dev_issues:         true,  // show "Needs Dev" items in panel + downloaded report
-    show_critical_in_report: true,  // show critical (error) items in downloaded report
-    dev_issues_affect_score: true,  // dev-required errors count against the score
-    escalate_chronics:       true,  // flag issues present 3+ months (edge fn, Phase 4)
+    show_dev_issues:         true,
+    show_critical_in_report: true,
+    dev_issues_affect_score: true,
+    escalate_chronics:       true,
   };
 
   const toggleBtn   = document.getElementById('acc-toggle');
@@ -1577,7 +565,6 @@
 
   function announce(msg) { statusEl.textContent = ''; setTimeout(() => { statusEl.textContent = msg; }, 50); }
 
-  // ── Wix iframe detection & dynamic positioning ──────
   const isInIframe = window.self !== window.top;
   if (isInIframe) document.body.classList.add('acc-in-iframe');
 
@@ -1618,12 +605,9 @@
     toggleBtn.focus();
   };
 
-  // ── Auto-reopen after EN restore reload — no flicker ─────────────
   try {
     if (sessionStorage.getItem('acc_reopen') === '1') {
       sessionStorage.removeItem('acc_reopen');
-      // Open immediately with transition suppressed so there's no
-      // visible close→open flash. Remove instant class after one frame.
       var _rp = document.getElementById('acc-panel');
       var _rb = document.getElementById('acc-toggle');
       if (_rp) {
@@ -1643,7 +627,6 @@
   document.getElementById('acc-close').addEventListener('click', closePanel);
   document.addEventListener('keydown', e => {
     if (e.key === 'Escape' && S.open) { closePanel(); }
-    // Trap focus inside panel when open
     if (e.key === 'Tab' && S.open) {
       const focusable = panel.querySelectorAll('button:not([disabled]), [tabindex="0"], select, input');
       const first = focusable[0], last = focusable[focusable.length - 1];
@@ -1652,7 +635,6 @@
     }
   });
 
-  // ── Tabs ──
   const accTabs = Array.from(document.querySelectorAll('.acc-tab'));
   accTabs.forEach((tab, index) => {
     tab.addEventListener('click', () => {
@@ -1675,12 +657,8 @@
       accTabs[newIndex].focus();
     });
   });
-  // Set initial tabindex state
   accTabs.forEach(t => t.setAttribute('tabindex', t.classList.contains('acc-active') ? '0' : '-1'));
 
-  // ══════════════════════════════════════════
-  // 4. PROFILES
-  // ══════════════════════════════════════════
   const PROFILES = {
     'visually-impaired': {
       name: '👁 Visually Impaired',
@@ -1747,14 +725,12 @@
   document.querySelectorAll('.acc-profile-card').forEach(card => {
     const activate = () => {
       const pid = card.dataset.profile;
-      // Deactivate previous
       document.querySelectorAll('.acc-profile-card').forEach(c => {
         c.classList.remove('acc-profile-active');
         c.setAttribute('aria-pressed','false');
         c.querySelector('.acc-profile-check').textContent = '';
       });
       if (S.activeProfile === pid) {
-        // Toggle off
         S.activeProfile = null;
         resetAll();
         document.getElementById('acc-active-badge').classList.remove('visible');
@@ -1788,17 +764,8 @@
     announce('Profile cleared');
   });
 
-  // ══════════════════════════════════════════
-  // 5. SETTINGS HELPERS
-  // ══════════════════════════════════════════
-
-  // scrollLock / scrollUnlock — prevents page jump during layout reflow.
-  // Call before any DOM change that triggers reflow, restore after rAF.
   function withScrollLock(fn) {
     var y = window.scrollY || window.pageYOffset || 0;
-    // Lock technique used by modal libraries:
-    // Fix body at -scrollY so layout changes don't cause scroll.
-    // This is the only cross-browser approach that reliably works.
     var body = document.body;
     var prevPosition = body.style.position;
     var prevTop      = body.style.top;
@@ -1806,9 +773,7 @@
     body.style.position = 'fixed';
     body.style.top      = '-' + y + 'px';
     body.style.width    = '100%';
-    // Apply the reflow-triggering change while body is fixed
     fn();
-    // Restore body and scroll position atomically
     body.style.position = prevPosition;
     body.style.top      = prevTop;
     body.style.width    = prevWidth;
@@ -1816,8 +781,6 @@
   }
   function setFontSize(v) {
     S.fontSize = Math.min(200, Math.max(70, v));
-    // Apply to body, not html — html font-size changes trigger browser
-    // scroll compensation; body font-size changes do not.
     document.body.style.fontSize = S.fontSize === 100 ? '' : S.fontSize + '%';
     document.getElementById('acc-fs-val').textContent = S.fontSize + '%';
   }
@@ -1837,7 +800,6 @@
     document.getElementById('acc-ws-val').textContent = S.wordSpacing + 'px';
   }
   function applyFilter(cls) {
-    // Remove previous filter class from both html and body
     if (S.colorFilter) {
       document.documentElement.classList.remove(S.colorFilter);
       document.body.classList.remove(S.colorFilter);
@@ -1845,8 +807,6 @@
     document.querySelectorAll('.acc-swatch').forEach(s => { s.classList.remove('acc-picked'); s.setAttribute('aria-checked','false'); });
     S.colorFilter = cls;
     if (cls) {
-      // Add to html (for filter property — keeps position:fixed working)
-      // Add to body too (for non-filter properties like background/color)
       document.documentElement.classList.add(cls);
       document.body.classList.add(cls);
       const sw = document.querySelector(`.acc-swatch[data-filter="${cls}"]`);
@@ -1877,7 +837,6 @@
     });
   }
 
-  // Stepper wiring
   function stepper(upId, dnId, valId, getV, setFn, min, max, step) {
     document.getElementById(upId).addEventListener('click', () => { if (getV() < max) setFn(+(getV() + step).toFixed(2)); });
     document.getElementById(dnId).addEventListener('click', () => { if (getV() > min) setFn(+(getV() - step).toFixed(2)); });
@@ -1887,20 +846,16 @@
   stepper('acc-ls-up','acc-ls-dn','acc-ls-val', () => S.letterSpacing,  setLetterSpacing,  0,   10,  1);
   stepper('acc-ws-up','acc-ws-dn','acc-ws-val', () => S.wordSpacing,    setWordSpacing,    0,   20,  2);
 
-  // Font family select
   document.getElementById('acc-font-family').addEventListener('change', e => setFontFamily(e.target.value));
 
-  // Text align buttons
   document.querySelectorAll('.acc-align-btn').forEach(btn => {
     btn.addEventListener('click', () => setTextAlign(btn.dataset.align));
   });
 
-  // Colour swatches
   document.querySelectorAll('.acc-swatch').forEach(sw => {
     sw.addEventListener('click', () => applyFilter(sw.dataset.filter));
   });
 
-  // ── Toggle rows ──
   const toggleMap = {
     'acc-t-guide':      'acc-reading-guide-on',
     'acc-t-mask':       'acc-reading-mask-on',
@@ -1917,7 +872,6 @@
     'acc-t-stimulus':   'acc-reduced-stimulus',
   };
 
-  // Classes that trigger full-page layout reflow when added to body
   var REFLOW_CLASSES = ['acc-text-spacing','acc-reduced-stimulus','acc-high-contrast','acc-inverted','acc-dark-contrast'];
 
   function setToggle(id, forceOn) {
@@ -1931,13 +885,11 @@
       var y = window.scrollY || window.pageYOffset || 0;
       if (add) {
         document.body.classList.add(cls);
-        // Filter classes must also go on html to preserve position:fixed behaviour
         if (cls === 'acc-reduced-stimulus') document.documentElement.classList.add(cls);
       } else {
         document.body.classList.remove(cls);
         if (cls === 'acc-reduced-stimulus') document.documentElement.classList.remove(cls);
       }
-      // Synchronous scroll restore — fires before browser can compensate
       window.scrollTo(0, y);
     }
 
@@ -1985,7 +937,6 @@
     row.addEventListener('keydown', e => { if (e.key === ' ' || e.key === 'Enter') { e.preventDefault(); setToggle(id); } });
   });
 
-  // Reading guide & mask mouse tracking
   document.addEventListener('mousemove', e => {
     if (S.toggles['acc-reading-guide-on']) guide.style.top = (e.clientY - 17) + 'px';
     if (S.toggles['acc-reading-mask-on']) {
@@ -1996,9 +947,6 @@
     }
   });
 
-  // ══════════════════════════════════════════
-  // 6. RESET
-  // ══════════════════════════════════════════
   function resetAll(silent) {
     setFontSize(100); document.body.style.fontSize = '';
     setLineHeight(1.6);
@@ -2007,7 +955,6 @@
     applyFilter('');
     setFontFamily('');
     setTextAlign('');
-    // Also clean html-level filter classes (acc-reduced-stimulus etc.)
     document.documentElement.classList.remove(
       'acc-reduced-stimulus','acc-high-contrast','acc-invert',
       'acc-grayscale','acc-low-saturation'
@@ -2031,17 +978,8 @@
     resetAll();
   });
 
-  // ══════════════════════════════════════════
-  // 7. AUTO-FIX ENGINE (unchanged + improved)
-  // ══════════════════════════════════════════
   let lastAudit = null;
 
-  // ══════════════════════════════════════════════════════
-  // WCAG 2.1 AA SCANNER — Industry-standard rule engine
-  // Maps to WCAG success criteria, persists results to DB
-  // ══════════════════════════════════════════════════════
-
-  // ── Contrast helpers ───────────────────────────────────
   function getLuminance(r, g, b) {
     const toLinear = c => { c /= 255; return c <= 0.03928 ? c / 12.92 : Math.pow((c + 0.055) / 1.055, 2.4); };
     return 0.2126 * toLinear(r) + 0.7152 * toLinear(g) + 0.0722 * toLinear(b);
@@ -2061,7 +999,7 @@
       if (bg && bg !== 'rgba(0, 0, 0, 0)' && bg !== 'transparent') return parseRGB(bg);
       node = node.parentElement;
     }
-    return [255, 255, 255]; // fallback white
+    return [255, 255, 255];
   }
   function getTextSize(el) {
     const fs = parseFloat(getComputedStyle(el).fontSize) || 16;
@@ -2070,12 +1008,10 @@
     return { px: fs, large: fs >= 18 || (bold && fs >= 14) };
   }
 
-  // ── Rule engine ────────────────────────────────────────
   function runScan() {
     const issues = [];
     const $ = sel => Array.from(document.querySelectorAll(sel)).filter(e => !widgetEl.contains(e));
 
-    // ── HELPER: luminance & contrast ──────────────────
     function lum(r,g,b){const s=c=>{c/=255;return c<=.03928?c/12.92:((c+.055)/1.055)**2.4;}; return .2126*s(r)+.7152*s(g)+.0722*s(b);}
     function contrast(l1,l2){const [hi,lo]=[Math.max(l1,l2),Math.min(l1,l2)];return(hi+.05)/(lo+.05);}
     function parseRgb(str){const m=str.match(/rgba?\((\d+),\s*(\d+),\s*(\d+)/);return m?[+m[1],+m[2],+m[3]]:null;}
@@ -2088,11 +1024,8 @@
       }
       const bodyBg=getComputedStyle(document.body).backgroundColor;
       const p=parseRgb(bodyBg);
-      return p||[255,255,255]; // default white, NOT navy
+      return p||[255,255,255];
     }
-    // requiresDev: true  = widget detected but CANNOT fix — needs custom code
-    // requiresDev: false = widget auto-fixed OR fixable via widget settings
-    // section: landmark region where issue was found (for dashboard section breakdown)
     function push(type,criterion,level,icon,title,desc,count,fixApplied,requiresDev,section,elements){
       issues.push({
         type,
@@ -2109,7 +1042,6 @@
       });
     }
 
-    // ── Element selector + snippet helpers (for detailed report) ──
     function getSelector(el) {
       if (!el) return '';
       const tag = (el.tagName || '').toLowerCase();
@@ -2131,7 +1063,6 @@
     }
     function makeEl(el) { return { selector: getSelector(el), snippet: getSnippet(el) }; }
 
-    // ── Section detector: returns landmark region for a given element ──
     function getSection(el){
       if(!el) return 'page';
       let node=el;
@@ -2149,9 +1080,6 @@
       return 'page';
     }
 
-    // ══════════════════════════════════════════════════
-    // WCAG 1.1.1 — Non-text Content (Level A)
-    // ══════════════════════════════════════════════════
     ;(function(){
       const imgs=$('img,input[type=image],[role=img]');
       let fixed=0,warned=0,errors=0;
@@ -2175,11 +1103,7 @@
       if(warnEls.length)  push('warning','1.1.1','A','🖼','Poor Alt Text Quality',`${warnEls.length} image(s) have alt text that appears to be a filename or URL.`,null,false,true,'page',warnEls);
     })();
 
-    // ══════════════════════════════════════════════════
-    // WCAG 1.3.1 — Info and Relationships (Level A)
-    // ══════════════════════════════════════════════════
     ;(function(){
-      // Heading structure
       const hds=$('h1,h2,h3,h4,h5,h6');
       const h1s=hds.filter(h=>h.tagName==='H1');
       let skipped=0;
@@ -2188,7 +1112,6 @@
       if(h1s.length>1)   push('warning','1.3.1','A','📋','Multiple H1 Headings',`${h1s.length} H1 elements found. Only one H1 is recommended per page.`,h1s.length,false,true,'page');
       if(skipped)        push('warning','1.3.1','A','📋','Heading Levels Skipped',`${skipped} non-sequential heading jump(s) detected (e.g. H2 → H4). This breaks screen reader navigation.`,skipped,false,true,'page');
 
-      // Tables
       const tables=$('table');
       let noTh=0,noCaption=0;
       tables.forEach(t=>{
@@ -2198,23 +1121,14 @@
       if(noTh)      push('error',  '1.3.1','A','📊','Data Tables Missing Headers',`${noTh} table(s) have no <th> elements. Screen readers cannot associate data with column/row headers.`,noTh,false,true,'main');
       if(noCaption) push('warning','1.3.1','A','📊','Tables Missing Caption',`${noCaption} table(s) have no <caption>. A caption identifies the table's purpose.`,noCaption,false,true,'main');
 
-      // Lists used as layout (common pattern)
       const listItems=$('ul>li,ol>li');
       const hasProperLists=listItems.length>0;
-      // Only warn if no list structure at all on a content-heavy page
     })();
 
-    // ══════════════════════════════════════════════════
-    // WCAG 1.3.2 — Meaningful Sequence (Level A)
-    // ══════════════════════════════════════════════════
     ;(function(){
       const posFixed=$('[style*="position:fixed"],[style*="position: fixed"]').filter(e=>!widgetEl.contains(e));
-      // Can't fully evaluate DOM order vs visual order from JS — flag if content uses absolute positioning heavily
     })();
 
-    // ══════════════════════════════════════════════════
-    // WCAG 1.3.4 — Orientation (Level AA)
-    // ══════════════════════════════════════════════════
     ;(function(){
       const lockMeta=document.querySelector('meta[name=viewport]');
       if(lockMeta){
@@ -2225,9 +1139,6 @@
       }
     })();
 
-    // ══════════════════════════════════════════════════
-    // WCAG 1.3.5 — Identify Input Purpose (Level AA)
-    // ══════════════════════════════════════════════════
     ;(function(){
       const personalFields={
         name:/\bname\b/i, email:/\bemail\b/i, tel:/\b(phone|tel)\b/i,
@@ -2240,8 +1151,7 @@
         const name=(inp.getAttribute('name')||'').toLowerCase();
         const id=(inp.getAttribute('id')||'').toLowerCase();
         const auto=inp.getAttribute('autocomplete');
-        if(auto&&auto!=='off'&&auto!=='') return; // already set ✓
-        // Check if it looks like a personal field
+        if(auto&&auto!=='off'&&auto!=='') return;
         for(const [type,rx] of Object.entries(personalFields)){
           if(rx.test(name)||rx.test(id)){ missing++; break; }
         }
@@ -2249,16 +1159,11 @@
       if(missing) push('warning','1.3.5','AA','🏷','Missing autocomplete Attributes',`${missing} personal input field(s) appear to lack autocomplete attributes, making autofill harder for users with motor disabilities.`,missing,false,true,'form');
     })();
 
-    // ══════════════════════════════════════════════════
-    // WCAG 1.4.1 — Use of Colour (Level A)
-    // ══════════════════════════════════════════════════
     ;(function(){
-      // Check required fields that use only colour (red border) with no other indicator
       const required=$('[required],[aria-required=true]');
       let onlyColor=0;
       required.forEach(inp=>{
         const cs=getComputedStyle(inp);
-        // If the element has a red border but no aria-describedby or visible label indicating required
         const hasRequiredIndicator=inp.getAttribute('aria-describedby')||
           document.querySelector(`label[for="${inp.id}"]`)?.textContent?.includes('*');
         if(!hasRequiredIndicator) onlyColor++;
@@ -2266,9 +1171,6 @@
       if(onlyColor) push('warning','1.4.1','A','🔴','Required Fields May Rely on Colour Only',`${onlyColor} required field(s) may not indicate their required status beyond colour alone. Add an asterisk (*) or text label.`,onlyColor,false,true,'form');
     })();
 
-    // ══════════════════════════════════════════════════
-    // WCAG 1.4.3 — Contrast (Minimum) (Level AA)
-    // ══════════════════════════════════════════════════
     ;(function(){
       const textEls=$('p,span,li,h1,h2,h3,h4,h5,h6,a,button,label,td,th,dt,dd,figcaption,caption,legend,blockquote');
       const failAAEls=[],failAAAEls=[];
@@ -2295,16 +1197,11 @@
       if(failAAAEls.length&&!failAAEls.length) push('warning','1.4.3','AA','🎨','Contrast Could Be Improved',`${failAAAEls.length} elements pass AA (4.5:1) but not AAA (7:1).`,null,false,true,'page',failAAAEls.slice(0,10));
     })();
 
-    // ══════════════════════════════════════════════════
-    // WCAG 1.4.4 — Resize Text (Level AA)
-    // ══════════════════════════════════════════════════
     ;(function(){
-      // Check for px font sizes that won't scale with user zoom preferences
       const textEls=$('p,li,td,span').slice(0,50);
       let pxFixed=0;
       textEls.forEach(el=>{
         const cs=getComputedStyle(el);
-        // Can't change CSS from JS easily; just detect and warn
       });
       const lockMeta=document.querySelector('meta[name=viewport]');
       if(lockMeta&&/user-scalable\s*=\s*no/i.test(lockMeta.getAttribute('content')||'')){
@@ -2312,13 +1209,7 @@
       }
     })();
 
-    // ══════════════════════════════════════════════════
-    // WCAG 1.4.10 — Reflow (Level AA)
-    // ══════════════════════════════════════════════════
     ;(function(){
-      // Detect horizontal scrollbar at 320px viewport (WCAG 1.4.10)
-      // We can't resize viewport from JS, but we can check for overflow:hidden on body
-      // which is a common anti-pattern that breaks reflow
       const bodyCs=getComputedStyle(document.body);
       const htmlCs=getComputedStyle(document.documentElement);
       if(bodyCs.overflowX==='hidden'||htmlCs.overflowX==='hidden'){
@@ -2326,9 +1217,6 @@
       }
     })();
 
-    // ══════════════════════════════════════════════════
-    // WCAG 1.4.11 — Non-text Contrast (Level AA)
-    // ══════════════════════════════════════════════════
     ;(function(){
       const inputs=$('input:not([type=hidden]),select,textarea,button');
       let warned=0;
@@ -2345,7 +1233,6 @@
       if(warned) push('warning','1.4.11','AA','🖊','Low Contrast UI Components',`~${warned} form control border(s) may not meet the 3:1 contrast ratio required for non-text UI components (WCAG 1.4.11).`,warned,false,true,'form');
     })();
 
-    // WCAG 1.2.1/1.2.2 - Captions / Audio Transcripts (Level A)
     ;(function(){
       var videos=$('video'), audios=$('audio'), noCaptions=0, noTranscript=0;
       videos.forEach(function(el){
@@ -2363,7 +1250,6 @@
         `${noTranscript} audio element(s) found with no visible transcript nearby. Audio-only content requires a text alternative.`,noTranscript,false,true,'main');
     })();
 
-    // WCAG 1.4.5 - Images of Text (Level AA)
     ;(function(){
       var imgs=$('img[alt]'), imgText=0;
       imgs.forEach(function(img){
@@ -2376,7 +1262,6 @@
         `${imgText} wide image(s) have long alt text suggesting text displayed as an image. Real text scales with user preferences; images of text do not.`,imgText,false,true,'page');
     })();
 
-    // WCAG 1.4.12 - Text Spacing (Level AA) - live injection test
     ;(function(){
       try{
         var ts=document.createElement('style');ts.id='acc-spacing-test';
@@ -2392,7 +1277,6 @@
       }catch(e){}
     })();
 
-    // WCAG 2.3.1 - Three Flashes (Level A)
     ;(function(){
       var potentialFlash=0;
       $('[style*="animation"],[class*="blink"],[class*="flash"],[class*="strobe"]').forEach(function(el){
@@ -2406,7 +1290,6 @@
         `${gifs.length} GIF image(s) found. If any flash more than 3 times per second they violate WCAG 2.3.1.`,gifs.length,false,true,'page');
     })();
 
-    // WCAG 2.2.2 - Pause, Stop, Hide (Level A)
     ;(function(){
       var autoEls=$('[data-ride="carousel"],[class*="carousel"],[class*="slider"],[class*="ticker"],marquee');
       var noControl=0;
@@ -2418,11 +1301,7 @@
         `${noControl} carousel/slider/ticker element(s) auto-advance without a pause or stop control. Users need to pause moving content.`,noControl,false,true,'page');
     })();
 
-    // ══════════════════════════════════════════════════
-    // WCAG 2.1.1 — Keyboard (Level A)
-    // ══════════════════════════════════════════════════
     ;(function(){
-      // Interactive elements that aren't keyboard-accessible
       const clickHandlers=$('[onclick]:not(a):not(button):not(input):not(select):not(textarea):not([role=button]):not([role=link]):not([tabindex])');
       if(clickHandlers.length){
         push('error','2.1.1','A','⌨','Click Handlers on Non-Interactive Elements',`${clickHandlers.length} element(s) have onclick but are not keyboard-reachable (missing role + tabindex). Keyboard-only users cannot activate these.`,clickHandlers.length,false,true,'page');
@@ -2434,11 +1313,7 @@
       if(divFocusable.length) push('warning','2.1.1','A','⌨','Focusable Non-Interactive Elements',`${divFocusable.length} div/span element(s) are focusable (tabindex=0) but have no ARIA role. Screen readers won't know what to do with them.`,divFocusable.length,false,true,'page');
     })();
 
-    // ══════════════════════════════════════════════════
-    // WCAG 2.1.2 — No Keyboard Trap (Level A)
-    // ══════════════════════════════════════════════════
     ;(function(){
-      // Detect modal dialogs without focus trap management
       const dialogs=$('[role=dialog],[role=alertdialog]');
       dialogs.forEach(d=>{
         if(!d.getAttribute('aria-modal')&&!d.getAttribute('aria-labelledby')&&!d.getAttribute('aria-label')){
@@ -2447,9 +1322,6 @@
       });
     })();
 
-    // ══════════════════════════════════════════════════
-    // WCAG 2.4.1 — Bypass Blocks (Level A)
-    // ══════════════════════════════════════════════════
     ;(function(){
       const hasSkip=document.querySelector('[data-acc-skip],[href="#main"],[href="#content"],.skip-link,#skip-nav,[id*="skip"],[aria-label*="skip" i]');
       if(!hasSkip){
@@ -2473,26 +1345,17 @@
       }
     })();
 
-    // ══════════════════════════════════════════════════
-    // WCAG 2.4.2 — Page Titled (Level A)
-    // ══════════════════════════════════════════════════
     ;(function(){
       const title=document.title||'';
       if(!title.trim()) push('error','2.4.2','A','🏷','Page Has No Title','The <title> element is empty or missing. Screen readers announce the page title when users navigate between pages.',null,false,true,'page');
       else if(title.length<5||title.toLowerCase()==='home'||title.toLowerCase()==='index') push('warning','2.4.2','A','🏷','Page Title May Be Generic',`Page title "${title}" may not adequately describe the page's purpose.`,null,false,true,'page');
     })();
 
-    // ══════════════════════════════════════════════════
-    // WCAG 2.4.3 — Focus Order (Level A)
-    // ══════════════════════════════════════════════════
     ;(function(){
       const positive=$('[tabindex]').filter(e=>!widgetEl.contains(e)&&parseInt(e.getAttribute('tabindex'))>0);
       if(positive.length) push('error','2.4.3','A','🔢','Positive tabindex Values Disrupt Focus Order',`${positive.length} element(s) use tabindex > 0 which overrides natural DOM focus order. Use tabindex="0" or "-1" only.`,positive.length,false,true,'page');
     })();
 
-    // ══════════════════════════════════════════════════
-    // WCAG 2.4.4 — Link Purpose (Level A)
-    // ══════════════════════════════════════════════════
     ;(function(){
       const vague=['click here','read more','here','more','link','details','learn more','continue','this','see more'];
       const links=$('a[href]');
@@ -2510,11 +1373,7 @@
       if(vagueLinkEls.length) push('warning','2.4.4','A','🔗','Vague Link Text',`${vagueLinkEls.length} link(s) use non-descriptive text like "click here" or "read more". Screen reader users cannot determine the link destination.`,null,false,true,'page',vagueLinkEls);
     })();
 
-    // ══════════════════════════════════════════════════
-    // WCAG 2.4.7 — Focus Visible (Level AA)
-    // ══════════════════════════════════════════════════
     ;(function(){
-      // Detect global outline:none or outline:0 in stylesheets
       let outlineRemoved=false;
       try{
         for(const sheet of Array.from(document.styleSheets)){
@@ -2528,9 +1387,6 @@
       if(outlineRemoved) push('error','2.4.7','AA','🔲','Focus Outline Removed via CSS','A CSS rule removes the focus outline on focused elements (`:focus { outline: none }`). Keyboard users cannot see where focus is.',null,false,true,'page');
     })();
 
-    // ══════════════════════════════════════════════════
-    // WCAG 2.5.5 — Target Size (Level AAA) / 2.5.8 AA (WCAG 2.2)
-    // ══════════════════════════════════════════════════
     ;(function(){
       const interactive=$('a,button,input,select,[role=button],[role=link]').slice(0,100);
       let tooSmall=0;
@@ -2543,9 +1399,6 @@
       if(tooSmall) push('warning','2.5.5','AA','🎯','Small Touch Targets',`${tooSmall} interactive element(s) appear smaller than 24×24px. WCAG 2.2 recommends a minimum 24×24px target size for pointer inputs.`,tooSmall,false,true,'page');
     })();
 
-    // ══════════════════════════════════════════════════
-    // WCAG 3.1.1 — Language of Page (Level A)
-    // ══════════════════════════════════════════════════
     ;(function(){
       const lang=document.documentElement.getAttribute('lang');
       if(!lang){
@@ -2556,14 +1409,6 @@
       }
     })();
 
-    // ══════════════════════════════════════════════════
-    // WCAG 3.2.1 — On Focus (Level A)
-    // ══════════════════════════════════════════════════
-    // Detecting focus-triggered context changes requires runtime monitoring — skipped
-
-    // ══════════════════════════════════════════════════
-    // WCAG 3.3.1 — Error Identification (Level A)
-    // ══════════════════════════════════════════════════
     ;(function(){
       const invalidInputs=$('[aria-invalid=true],[class*=error i],[class*=invalid i]');
       let missingDesc=0;
@@ -2574,9 +1419,6 @@
       if(missingDesc) push('warning','3.3.1','A','❌','Error Messages Not Programmatically Associated',`${missingDesc} invalid input(s) lack aria-describedby pointing to an error message element. Screen readers won't announce the error.`,missingDesc,false,true,'form');
     })();
 
-    // ══════════════════════════════════════════════════
-    // WCAG 3.3.2 — Labels or Instructions (Level A)
-    // ══════════════════════════════════════════════════
     ;(function(){
       const inputs=$('input:not([type=hidden]):not([type=submit]):not([type=button]):not([type=image]),select,textarea');
       const fixedInpEls=[],errorInpEls=[];
@@ -2598,22 +1440,14 @@
       if(errorInpEls.length) push('error','3.3.2','A','📝','Unlabelled Form Controls',`${errorInpEls.length} input(s) have no label, aria-label, or placeholder. Screen readers cannot identify these fields.`,null,false,true,'form',errorInpEls);
     })();
 
-    // ══════════════════════════════════════════════════
-    // WCAG 4.1.1 — Parsing (Level A)
-    // ══════════════════════════════════════════════════
     ;(function(){
-      // Duplicate IDs
       const allIds=Array.from(document.querySelectorAll('[id]')).filter(e=>!widgetEl.contains(e)).map(e=>e.id);
       const dupeIds=allIds.filter((id,i)=>allIds.indexOf(id)!==i);
       const uniqueDupes=[...new Set(dupeIds)];
       if(uniqueDupes.length) push('error','4.1.1','A','🆔','Duplicate ID Attributes',`${uniqueDupes.length} ID(s) appear more than once. Duplicate IDs break ARIA references.`,null,false,true,'page',uniqueDupes.map(id=>({selector:'#'+id,snippet:allIds.filter(x=>x===id).length+' elements share this ID'})));
     })();
 
-    // ══════════════════════════════════════════════════
-    // WCAG 4.1.2 — Name, Role, Value (Level A)
-    // ══════════════════════════════════════════════════
     ;(function(){
-      // Buttons
       const btns=$('button,input[type=submit],input[type=button],input[type=reset],[role=button]');
       const fixedBtnEls=[],errorBtnEls=[];
       btns.forEach(b=>{
@@ -2630,7 +1464,6 @@
       if(fixedBtnEls.length) push('fixed','4.1.2','A','🔘','Icon Buttons Labelled',`Added aria-label to ${fixedBtnEls.length} button(s) using SVG title or image alt text.`,null,true,false,'page',fixedBtnEls);
       if(errorBtnEls.length) push('error','4.1.2','A','🔘','Unlabelled Buttons',`${errorBtnEls.length} button(s) have no accessible name. Screen readers will just say "button" with no context.`,null,false,true,'page',errorBtnEls);
 
-      // Invalid ARIA roles
       const validRoles=['alert','alertdialog','application','article','banner','button','cell','checkbox',
         'columnheader','combobox','complementary','contentinfo','definition','dialog','directory',
         'document','feed','figure','form','grid','gridcell','group','heading','img','link','list',
@@ -2647,7 +1480,6 @@
       });
       if(badRole) push('error','4.1.2','A','♿','Invalid ARIA Role Values',`${badRole} element(s) use ARIA role values that are not in the ARIA specification. These will be ignored or cause errors in screen readers.`,badRole,false,true,'page');
 
-      // iFrames
       const frames=$('iframe');
       let fixed2=0;
       frames.forEach(f=>{
@@ -2659,24 +1491,18 @@
       });
       if(fixed2) push('fixed','4.1.2','A','🖥','iFrames Titled',`Added title attribute to ${fixed2} iframe(s).`,fixed2,true,false,'page');
 
-      // Landmark check
       if(!document.querySelector('main,[role=main]'))        push('error',  '4.1.2','A','🗺','No <main> Landmark','Add a <main> element to identify the primary content area. Screen reader users navigate by landmarks.',null,false,true,'page');
       if(!document.querySelector('nav,[role=navigation]'))   push('warning','4.1.2','A','🗺','No <nav> Landmark','Wrap primary navigation in a <nav> element for screen reader landmark navigation.',null,false,true,'page');
       if(!document.querySelector('header,[role=banner]'))    push('warning','4.1.2','A','🗺','No <header> Landmark','Add a <header> element for the page banner area.',null,false,true,'page');
       if(!document.querySelector('footer,[role=contentinfo]')) push('warning','4.1.2','A','🗺','No <footer> Landmark','Add a <footer> element for page footer content.',null,false,true,'page');
     })();
 
-    // ══════════════════════════════════════════════════
-    // MEDIA & TECHNICAL FIXES
-    // ══════════════════════════════════════════════════
     ;(function(){
-      // Autoplay media
       const media=$('video[autoplay],audio[autoplay]');
       let fixed=0;
       media.forEach(m=>{if(!m.muted){m.muted=true;fixed++;}});
       if(fixed) push('fixed','1.4.2','A','🔇','Autoplay Media Muted',`Muted ${fixed} auto-playing media element(s) to prevent unexpected audio.`,fixed,true,false,'page');
 
-      // External links
       const extLinks=$('a[target=_blank]');
       let fixedExt=0;
       extLinks.forEach(a=>{
@@ -2688,7 +1514,6 @@
       });
       if(fixedExt) push('fixed','2.4.4','A','🔒','External Links Secured & Labelled',`Applied rel="noopener noreferrer" and "(opens in new tab)" to ${fixedExt} external link(s).`,fixedExt,true,false,'page');
 
-      // Viewport meta (add if missing)
       if(!document.querySelector('meta[name=viewport]')){
         const m=document.createElement('meta');m.name='viewport';m.content='width=device-width,initial-scale=1';
         document.head.appendChild(m);
@@ -2696,23 +1521,12 @@
       }
     })();
 
-    // ══════════════════════════════════════════════════
-    // SCORE CALCULATION — WCAG-weighted
-    // Auto-fixed issues  : 0 pts deducted  (widget earns its keep)
-    // Level A errors     : -14 pts each    (requires dev action)
-    // Level AA errors    : -7 pts each     (requires dev action)
-    // Warnings           : -3 pts each
-    // ══════════════════════════════════════════════════
     const nFixed       = issues.filter(i=>i.type==='fixed').length;
     const nAutoFixed   = issues.filter(i=>i.type==='fixed'&&i.fixApplied).length;
     const nRequiresDev = issues.filter(i=>i.requiresDev).length;
     const nErr         = issues.filter(i=>i.type==='error').length;
     const nWarn        = issues.filter(i=>i.type==='warning').length;
 
-    // ── Score: honour dev_issues_affect_score toggle ──
-    // When OFF: dev-required errors are excluded from the penalty calc,
-    // so the score only reflects what the widget itself couldn't auto-fix.
-    // When ON (default): all unfixed errors count against the score.
     const scoringIssues = REPORT_CFG.dev_issues_affect_score
       ? issues
       : issues.filter(i => !i.requiresDev);
@@ -2737,12 +1551,11 @@
     if(!issues.length){
       list.innerHTML='<div style="text-align:center;color:#38d9a9;font-size:.88rem;padding:24px 0;line-height:1.6;">🎉 Excellent! No accessibility issues found.</div>';
     } else {
-      // Apply show_dev_issues toggle — hide "Needs Dev" items from panel if admin turned off
       const visibleIssues = REPORT_CFG.show_dev_issues
         ? issues
         : issues.filter(i => !i.requiresDev || i.type === 'fixed');
       const order={fixed:0,warning:1,error:2};
-      visibleIssues.sort((a,b)=>order[b.type]-order[a.type]); // errors first
+      visibleIssues.sort((a,b)=>order[b.type]-order[a.type]);
       list.innerHTML=visibleIssues.map(i=>`
         <div class="acc-issue ${i.type}">
           <div class="acc-issue-head">
@@ -2783,9 +1596,6 @@
     renderHistory();
     announce(`Scan complete. Score: ${score}/100. ${nFixed} fixes applied, ${nErr} failures, ${nWarn} warnings.`);
 
-    // ── POST scan results to Supabase (per page, per client) ──
-    // Each page visit = one scan record. Dashboard aggregates all pages
-    // into a site-wide score over time — matching UserWay/Accessibe architecture.
     if (ACC_CLIENT) {
       const wcagBreakdown = {
         perceivable:    Math.max(0, Math.min(100, Math.round(100 - issues.filter(i=>i.type==='error'&&['1.1.1','1.3.1','1.3.4','1.3.5','1.4.1','1.4.3','1.4.4','1.4.10','1.4.11'].includes(i.criterion)).length*14 - issues.filter(i=>i.type==='warning'&&i.criterion&&i.criterion.startsWith('1.')).length*3))),
@@ -2793,20 +1603,17 @@
         understandable: Math.max(0, Math.min(100, Math.round(100 - issues.filter(i=>i.type==='error'&&['3.1.1','3.2.1','3.3.1','3.3.2'].includes(i.criterion)).length*14 - issues.filter(i=>i.type==='warning'&&i.criterion&&i.criterion.startsWith('3.')).length*3))),
         robust:         Math.max(0, Math.min(100, Math.round(100 - issues.filter(i=>i.type==='error'&&['4.1.1','4.1.2'].includes(i.criterion)).length*14 - issues.filter(i=>i.type==='warning'&&i.criterion&&i.criterion.startsWith('4.')).length*3))),
       };
-      // Backfill POUR scores onto the record for downloadReport access
       record.perceivable    = wcagBreakdown.perceivable;
       record.operable       = wcagBreakdown.operable;
       record.understandable = wcagBreakdown.understandable;
       record.robust         = wcagBreakdown.robust;
 
-      // Top failing criteria for report detail
       const topFailures = issues
         .filter(i=>i.type==='error')
         .map(i=>i.criterion)
         .filter((v,idx,arr)=>arr.indexOf(v)===idx)
         .slice(0,5);
 
-      // Section breakdown for admin dashboard drill-down
       const sectionBreakdown = ['header','navigation','main','form','aside','footer','page'].reduce((acc,s)=>{
         acc[s] = issues.filter(i=>i.section===s&&i.type==='error').length;
         return acc;
@@ -2841,14 +1648,8 @@
           issue_count:    issues.length,
           scanned_at:     new Date().toISOString(),
         }),
-      }).catch(()=>{}); // silent — scan POST is non-blocking
+      }).catch(()=>{});
 
-      // ── POST one row per element to scan_issues ──────────────────
-      // Maximum detail mode: each affected element gets its own row.
-      // This lets the monthly PDF report list every specific element
-      // (selector + snippet) rather than just a count.
-      // The edge function aggregates by criterion for the diff engine;
-      // the detailed page iterates individual rows for the PDF breakdown.
       const now = new Date().toISOString();
       const pageUrl = window.location.href;
       const elementRows = [];
@@ -2857,7 +1658,6 @@
         .filter(i => i.criterion)
         .forEach(i => {
           if (i.elements && i.elements.length > 0) {
-            // One row per captured element
             i.elements.forEach(el => {
               elementRows.push({
                 client_code:    ACC_CLIENT,
@@ -2877,7 +1677,6 @@
               });
             });
           } else {
-            // Issue with no element capture (e.g. page-level checks) — one row
             elementRows.push({
               client_code:    ACC_CLIENT,
               page_url:       pageUrl,
@@ -2907,7 +1706,7 @@
             'Prefer':        'return=minimal',
           },
           body: JSON.stringify(elementRows),
-        }).catch(()=>{}); // silent — non-blocking
+        }).catch(()=>{});
       }
     }
 
@@ -2932,7 +1731,6 @@
   }
 
   function downloadReport(record) {
-    // Apply admin report toggles before building the report
     let reportIssues = record.issues.slice();
     if (!REPORT_CFG.show_dev_issues)
       reportIssues = reportIssues.filter(i => !i.requiresDev || i.type === 'fixed');
@@ -3072,14 +1870,9 @@ tr.error   td:first-child{border-left:3px solid #ef4444}
   });
   document.getElementById('acc-dl-now').addEventListener('click', () => { if (lastAudit) downloadReport(lastAudit); });
 
-  // ── Auto-scan on page load ──
-  // Runs on every page the widget is embedded on.
-  // Results are posted to Supabase scans table (per page, per client)
-  // so the dashboard can aggregate a site-wide score over time.
   setTimeout(() => {
     try {
       const record = runScan();
-      // Visually signal the scan tab has results (badge on tab button)
       const scanTab = document.getElementById('tab-autofix');
       if (scanTab && record) {
         const score = record.score;
@@ -3092,14 +1885,6 @@ tr.error   td:first-child{border-left:3px solid #ef4444}
     } catch(e) {}
   }, 2000);
 
-
-  // ══════════════════════════════════════════
-  // 8. MUTATION OBSERVER — dynamic content
-  // Watches the live DOM for changes caused by
-  // SPAs, React/Vue renders, modals, lazy-load.
-  // Re-scans after 300ms of DOM quiet, then
-  // POSTs the updated result to Supabase.
-  // ══════════════════════════════════════════
   ;(function initMutationWatcher() {
     const targetNode = document.body;
     if (!targetNode || !window.MutationObserver) return;
@@ -3112,7 +1897,6 @@ tr.error   td:first-child{border-left:3px solid #ef4444}
     const RESCAN_COOLDOWN_MS = 8000;
     let lastRescanAt   = 0;
 
-    // Attributes that are too noisy to trigger a re-scan on their own
     const IGNORE_ATTRS = new Set(['style','class','aria-expanded','aria-selected',
       'aria-checked','aria-current','data-active','tabindex','aria-hidden']);
 
@@ -3149,9 +1933,6 @@ tr.error   td:first-child{border-left:3px solid #ef4444}
       ],
     });
 
-    // ── SPA route-change watcher ──
-    // Intercepts pushState/replaceState so React Router, Vue Router,
-    // Next.js etc. trigger a re-scan on navigation without a page reload.
     const _push    = history.pushState.bind(history);
     const _replace = history.replaceState.bind(history);
 
@@ -3169,8 +1950,6 @@ tr.error   td:first-child{border-left:3px solid #ef4444}
     window.addEventListener('popstate', onRouteChange);
   })();
 
-  // ── dev-mode: reveal Scan + History tabs ──
-  // Add data-dev-mode="true" on the <script> tag during testing.
   ;(function applyDevMode() {
     const devMode = _script && (_script.getAttribute('data-dev-mode') === 'true');
     if (!devMode) return;
@@ -3182,11 +1961,6 @@ tr.error   td:first-child{border-left:3px solid #ef4444}
     if (hdr) hdr.textContent = 'Auto AI Engine · DEV MODE';
   })();
 
-  // ══════════════════════════════════════════
-  // 8. FEEDBACK SUBMISSION (client-specific)
-  // ══════════════════════════════════════════
-
-  // Set page URL display in feedback tab
   const fbUrlEl = document.getElementById('acc-fb-url');
   if (fbUrlEl) fbUrlEl.textContent = window.location.href;
 
@@ -3239,12 +2013,10 @@ tr.error   td:first-child{border-left:3px solid #ef4444}
         throw new Error(errText);
       }
 
-      // Success — show confirmation, hide form
       document.getElementById('acc-fb-form').style.display = 'none';
       successEl.style.display = 'block';
       announce('Feedback submitted successfully.');
 
-      // Reset form for next use after 4s
       setTimeout(function() {
         msgEl.value = '';
         emailEl.value = '';
@@ -3261,9 +2033,6 @@ tr.error   td:first-child{border-left:3px solid #ef4444}
     }
   });
 
-  // ══════════════════════════════════════════
-  // 9. LOAD & APPLY WIDGET SETTINGS FROM DB
-  // ══════════════════════════════════════════
   (async function loadWidgetSettings() {
     if (!ACC_CLIENT) return;
     try {
@@ -3276,7 +2045,6 @@ tr.error   td:first-child{border-left:3px solid #ef4444}
       if (!rows || !rows.length) return;
       const cfg = rows[0];
 
-      // ── Position ──
       if (cfg.position) {
         const pos = cfg.position.toLowerCase();
         const toggle  = document.getElementById('acc-toggle');
@@ -3289,20 +2057,15 @@ tr.error   td:first-child{border-left:3px solid #ef4444}
         if (panelEl) { panelEl.style.bottom=pos.includes('top')?'auto':'100px'; panelEl.style.top=pos.includes('top')?'100px':'auto'; panelEl.style.right=right; panelEl.style.left=left; }
       }
 
-      // ── Accent colour ──
       if (cfg.accent_color) {
         document.documentElement.style.setProperty('--acc-accent', cfg.accent_color);
       }
 
-      // ── Tab visibility ──
       const profilesTab = document.getElementById('tab-profiles');
       const feedbackTab = document.getElementById('tab-feedback');
       if (cfg.hide_profiles && profilesTab) profilesTab.style.display = 'none';
       if (cfg.hide_feedback && feedbackTab) feedbackTab.style.display = 'none';
 
-      // ── Report behaviour toggles (Phase 3) ──
-      // These 4 columns must exist in widget_settings — see SQL migration below.
-      // If a column is null/undefined the REPORT_CFG default is preserved.
       if (cfg.show_dev_issues         !== null && cfg.show_dev_issues         !== undefined)
         REPORT_CFG.show_dev_issues         = !!cfg.show_dev_issues;
       if (cfg.show_critical_in_report !== null && cfg.show_critical_in_report !== undefined)
@@ -3312,16 +2075,12 @@ tr.error   td:first-child{border-left:3px solid #ef4444}
       if (cfg.escalate_chronics       !== null && cfg.escalate_chronics       !== undefined)
         REPORT_CFG.escalate_chronics       = !!cfg.escalate_chronics;
 
-      // ── T1 tier default — hide dev issues by default ──
-      // If no explicit override and client is T1, hide dev items to keep
-      // the panel encouraging rather than alarming for basic-tier clients.
       if (ACC_TIER === '1' && cfg.show_dev_issues === null) {
         REPORT_CFG.show_dev_issues         = false;
         REPORT_CFG.dev_issues_affect_score = false;
       }
 
     } catch(e) {
-      // Settings load failure is non-fatal — REPORT_CFG defaults remain
     }
   })();
 
