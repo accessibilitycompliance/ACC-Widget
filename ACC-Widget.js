@@ -2061,10 +2061,36 @@ tr.error   td:first-child{border-left:3px solid #ef4444}
         document.documentElement.style.setProperty('--acc-accent', cfg.accent_color);
       }
 
-      const profilesTab = document.getElementById('tab-profiles');
-      const feedbackTab = document.getElementById('tab-feedback');
-      if (cfg.hide_profiles && profilesTab) profilesTab.style.display = 'none';
-      if (cfg.hide_feedback && feedbackTab) feedbackTab.style.display = 'none';
+      const profilesTab  = document.getElementById('tab-profiles');
+      const feedbackTab  = document.getElementById('tab-feedback');
+
+      if (cfg.hide_profiles && profilesTab) {
+        // Hide the tab button
+        profilesTab.style.display = 'none';
+        profilesTab.classList.remove('acc-active');
+        profilesTab.setAttribute('aria-selected', 'false');
+        // If profiles panel is currently the active panel (default on first open),
+        // deactivate it immediately and activate Settings instead — before any paint
+        const profilesPanel = document.getElementById('panel-profiles');
+        const settingsTab   = document.getElementById('tab-settings');
+        const settingsPanel = document.querySelector('.acc-panel-content[data-panel="settings"]');
+        if (profilesPanel) {
+          profilesPanel.classList.remove('acc-active');
+        }
+        if (settingsPanel) {
+          settingsPanel.classList.add('acc-active');
+        }
+        if (settingsTab) {
+          settingsTab.classList.add('acc-active');
+          settingsTab.setAttribute('aria-selected', 'true');
+        }
+      }
+
+      if (cfg.hide_feedback && feedbackTab) {
+        feedbackTab.style.display = 'none';
+        feedbackTab.classList.remove('acc-active');
+        feedbackTab.setAttribute('aria-selected', 'false');
+      }
 
       if (cfg.show_dev_issues         !== null && cfg.show_dev_issues         !== undefined)
         REPORT_CFG.show_dev_issues         = !!cfg.show_dev_issues;
