@@ -2036,41 +2036,8 @@ tr.error   td:first-child{border-left:3px solid #ef4444}
   (async function loadWidgetSettings() {
     if (!ACC_CLIENT) return;
     try {
-      // ── Check client is active (widget_active flag) ───────────────────────
-      // If the client is cancelled, widget_active = false → hide widget entirely
-      try {
-        const clientRes = await fetch(
-          ACC_API_URL + '/rest/v1/clients?client_code=eq.' + encodeURIComponent(ACC_CLIENT) + '&select=widget_active,status,renewal_date&limit=1',
-          { headers: { 'apikey': ACC_ANON, 'Authorization': 'Bearer ' + ACC_ANON } }
-        );
-        if (clientRes.ok) {
-          const clientRows = await clientRes.json();
-          if (clientRows && clientRows.length) {
-            const cl = clientRows[0];
-            // Disable widget only if:
-            // 1. widget_active = false (admin manual kill — immediate)
-            // 2. status = 'cancelled' AND renewal_date has passed (graceful wind-down)
-            const isCancelledAndExpired = cl.status === 'cancelled'
-              && cl.renewal_date
-              && new Date() > new Date(cl.renewal_date);
-            const isManuallyDisabled = cl.widget_active === false;
-
-            if (isManuallyDisabled || isCancelledAndExpired) {
-              const toggle  = document.getElementById('acc-toggle');
-              const panelEl = document.getElementById('acc-panel');
-              const root    = document.getElementById('acc-widget-root');
-              if (toggle)  toggle.style.display  = 'none';
-              if (panelEl) panelEl.style.display  = 'none';
-              if (root)    root.style.display     = 'none';
-              console.info('[ACC Widget] Widget disabled for this account.');
-              return; // stop all further widget init
-            }
-          }
-        }
-      } catch(_) {} // non-fatal — if check fails, widget still shows
-
       const res = await fetch(
-        ACC_API_URL + '/rest/v1/widget_settings?client_code=eq.' + encodeURIComponent(ACC_CLIENT) + '&limit=1',
+        ACC_API_URL + '/rest/v1/widget_settings?client_id=eq.' + encodeURIComponent(ACC_CLIENT) + '&limit=1',
         { headers: { 'apikey': ACC_ANON, 'Authorization': 'Bearer ' + ACC_ANON } }
       );
       if (!res.ok) return;
@@ -2094,9 +2061,25 @@ tr.error   td:first-child{border-left:3px solid #ef4444}
         document.documentElement.style.setProperty('--acc-accent', cfg.accent_color);
       }
 
-      const profilesTab = document.getElementById('tab-profiles');
-      const feedbackTab = document.getElementById('tab-feedback');
-      if (cfg.hide_profiles && profilesTab) profilesTab.style.display = 'none';
+      const profilesTab  = document.getElementById('tab-profiles');
+      const feedbackTab  = document.getElementById('tab-feedback');
+      const profilePanel = document.getElementById('panel-profiles');
+      const settingsTab  = document.getElementById('tab-settings');
+      const settingsPanel= document.querySelector('.acc-panel-content[data-panel="settings"]');
+
+      if (cfg.hide_profiles && profilesTab) {
+        profilesTab.style.display = 'none';
+        // If profiles panel is the active one, switch to Settings instead
+        if (profilePanel && profilePanel.classList.contains('acc-active')) {
+          profilePanel.classList.remove('acc-active');
+          if (settingsPanel) settingsPanel.classList.add('acc-active');
+          if (settingsTab) {
+            settingsTab.classList.add('acc-active');
+            settingsTab.setAttribute('aria-selected', 'true');
+            if (profilesTab) { profilesTab.classList.remove('acc-active'); profilesTab.setAttribute('aria-selected', 'false'); }
+          }
+        }
+      }
       if (cfg.hide_feedback && feedbackTab) feedbackTab.style.display = 'none';
 
       if (cfg.show_dev_issues         !== null && cfg.show_dev_issues         !== undefined)
