@@ -2036,6 +2036,25 @@ tr.error   td:first-child{border-left:3px solid #ef4444}
   (async function loadWidgetSettings() {
     if (!ACC_CLIENT) return;
     try {
+      // ── widget_active check: if admin disabled widget for this client, remove and exit ──
+      const activeRes = await fetch(
+        ACC_API_URL + '/rest/v1/clients?client_code=eq.' + encodeURIComponent(ACC_CLIENT) + '&select=widget_active&limit=1',
+        { headers: { 'apikey': ACC_ANON, 'Authorization': 'Bearer ' + ACC_ANON } }
+      );
+      if (activeRes.ok) {
+        const clientRows = await activeRes.json();
+        if (clientRows && clientRows.length && clientRows[0].widget_active === false) {
+          // Admin has disabled this widget — remove it entirely from the page
+          const root = document.getElementById('acc-widget-root');
+          if (root) root.remove();
+          const toggle = document.getElementById('acc-toggle');
+          if (toggle) toggle.remove();
+          const panel = document.getElementById('acc-panel');
+          if (panel) panel.remove();
+          return;
+        }
+      }
+      // ── load widget_settings ──────────────────────────────────────────────────────
       const res = await fetch(
         ACC_API_URL + '/rest/v1/widget_settings?client_code=eq.' + encodeURIComponent(ACC_CLIENT) + '&limit=1',
         { headers: { 'apikey': ACC_ANON, 'Authorization': 'Bearer ' + ACC_ANON } }
